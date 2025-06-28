@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transformative Justice AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #text {
+      font-size: 1.5rem;
+      max-width: 800px;
+      text-align: center;
+      line-height: 1.6;
+      padding: 0 20px;
+      min-height: 60vh;
+    }
+    .orb {
+      margin-top: 40px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #6a5acd, #4da6ff);
+      background-size: 200% 200%;
+      animation: pulse 2s infinite ease-in-out, colorShift 8s infinite linear;
+      box-shadow: 0 0 20px rgba(77, 166, 255, 0.6);
+      opacity: 0;
+      transition: opacity 2s ease-in;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(77, 166, 255, 0.6); }
+      50% { transform: scale(1.1); box-shadow: 0 0 40px rgba(106, 90, 205, 0.9); }
+    }
+    @keyframes colorShift {
+      0% { background: radial-gradient(circle at center, #6a5acd, #4da6ff); }
+      33% { background: radial-gradient(circle at center, #4da6ff, #ffffff); }
+      66% { background: radial-gradient(circle at center, #ffffff, #6a5acd); }
+      100% { background: radial-gradient(circle at center, #6a5acd, #4da6ff); }
+    }
+    .button {
+      margin-top: 30px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      background-color: #FFA726;
+      color: black;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 1.5s ease-in;
+    }
+    .button:hover {
+      background-color: #ffc562;
+    }
+    .highlight-blue { color: #4da6ff; }
+    .highlight-deepblue { color: #1E90FF; }
+    .highlight-magenta { color: #D87093; }
+    .highlight-orange { color: #FFA726; }
+  </style>
+</head>
+<body>
+  <div id="text"></div>
+  <div class="orb" id="orb"></div>
+  <button class="button" id="launchBtn">Talk to Bob</button>
+
+  <script>
+    const lines = [
+      "<span class='highlight-blue'>Welcome</span> to <span class='highlight-deepblue'>Transformative Justice AI</span>.",
+      "An <span class='highlight-blue'>innovative tool</span> designed to support <span class='highlight-magenta'>alternative pathways</span> in the justice system.",
+      "Here, <span class='highlight-magenta'>insight</span> replaces <span class='highlight-orange'>judgment</span> — and the process begins with <span class='highlight-blue'>understanding</span>.",
+      "Brought to you by <span class='highlight-blue'>Amy Ashworth</span>, Commonwealth’s Attorney for Prince William County, City of Manassas & Manassas Park —",
+      "<span class='highlight-deepblue'>Offering</span> a <span class='highlight-magenta'>new way forward</span>.",
+      "<span class='highlight-orange'>When you’re ready...</span>"
+    ];
+
+    const textEl = document.getElementById("text");
+    const orbEl = document.getElementById("orb");
+    const btnEl = document.getElementById("launchBtn");
+
+    let lineIndex = 0;
+    let charIndex = 0;
+    let currentLine;
+
+    function typeLine() {
+      if (!currentLine && lineIndex < lines.length) {
+        currentLine = document.createElement("p");
+        textEl.appendChild(currentLine);
+      }
+
+      if (lineIndex < lines.length) {
+        let lineText = lines[lineIndex];
+        currentLine.innerHTML = lineText.slice(0, charIndex);
+        charIndex++;
+        if (charIndex <= lineText.length) {
+          setTimeout(typeLine, 25);
+        } else {
+          charIndex = 0;
+          lineIndex++;
+          currentLine = null;
+          setTimeout(typeLine, 600);
+        }
+      } else {
+        orbEl.style.opacity = 1;
+        setTimeout(() => {
+          btnEl.style.opacity = 1;
+        }, 3000);
+      }
+    }
+
+    window.onload = () => {
+      setTimeout(typeLine, 800);
+    };
+  </script>
+</body>
+</html>
