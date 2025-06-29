@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transformative Justice AI</title>
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 40px;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    .highlight-blue { color: #2aa6f2; }
+    .highlight-deepblue { color: #558ed5; }
+    .highlight-magenta { color: #e65c9c; }
+    .highlight-orange { color: #ffb347; }
+    .highlight-white { color: #ffffff; }
+
+    #content {
+      font-size: 1.5em;
+      line-height: 1.8;
+      max-width: 800px;
+      margin: auto;
+      padding-bottom: 120px;
+    }
+
+    .orb {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #6db5f2, #1f4ba0);
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+      opacity: 0;
+      transition: opacity 2s ease-in;
+    }
+
+    @keyframes pulse {
+      0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+      50% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+      100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+    }
+
+    #bobBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ffb347;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 1em;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 1.5s ease-in;
+    }
+
+    .word {
+      opacity: 0;
+      display: inline-block;
+      margin-right: 4px;
+      transition: opacity 0.6s ease-in;
+    }
+
+    .line {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="content"></div>
+
+<div class="orb" id="orbEl"></div>
+<button id="bobBtn">Talk to Bob</button>
+
+<script>
+const lines = [
+  [
+    {text: "Welcome", class: "highlight-white"},
+    {text: "to", class: "highlight-white"},
+    {text: "Transformative", class: "highlight-blue"},
+    {text: "Justice", class: "highlight-magenta"},
+    {text: "AI.", class: "highlight-orange"}
+  ],
+  [
+    {text: "An", class: "highlight-white"},
+    {text: "innovative", class: "highlight-deepblue"},
+    {text: "tool", class: "highlight-deepblue"},
+    {text: "designed", class: "highlight-white"},
+    {text: "to", class: "highlight-white"},
+    {text: "support", class: "highlight-white"},
+    {text: "new", class: "highlight-magenta"},
+    {text: "pathways", class: "highlight-blue"},
+    {text: "in", class: "highlight-white"},
+    {text: "the", class: "highlight-white"},
+    {text: "justice", class: "highlight-white"},
+    {text: "system.", class: "highlight-white"}
+  ],
+  [
+    {text: "Here,", class: "highlight-white"},
+    {text: "insight", class: "highlight-magenta"},
+    {text: "replaces", class: "highlight-white"},
+    {text: "judgment", class: "highlight-orange"},
+    {text: "—", class: "highlight-white"},
+    {text: "and", class: "highlight-white"},
+    {text: "the", class: "highlight-white"},
+    {text: "process", class: "highlight-white"},
+    {text: "begins", class: "highlight-white"},
+    {text: "with", class: "highlight-white"},
+    {text: "understanding.", class: "highlight-blue"}
+  ],
+  [
+    {text: "Brought", class: "highlight-white"},
+    {text: "to", class: "highlight-white"},
+    {text: "you", class: "highlight-white"},
+    {text: "by", class: "highlight-white"},
+    {text: "Amy", class: "highlight-magenta"},
+    {text: "Ashworth,", class: "highlight-orange"},
+    {text: "Commonwealth’s", class: "highlight-white"},
+    {text: "Attorney", class: "highlight-white"},
+    {text: "for", class: "highlight-white"},
+    {text: "Prince", class: "highlight-blue"},
+    {text: "William", class: "highlight-blue"},
+    {text: "County,", class: "highlight-blue"},
+    {text: "City", class: "highlight-magenta"},
+    {text: "of", class: "highlight-magenta"},
+    {text: "Manassas", class: "highlight-magenta"},
+    {text: "&", class: "highlight-orange"},
+    {text: "Manassas", "class": "highlight-orange"},
+    {text: "Park", "class": "highlight-orange"},
+    {text: "—", class: "highlight-white"}
+  ],
+  [
+    {text: "Offering", class: "highlight-deepblue"},
+    {text: "a", class: "highlight-blue"},
+    {text: "new", class: "highlight-blue"},
+    {text: "way", class: "highlight-orange"},
+    {text: "forward.", class: "highlight-magenta"}
+  ],
+  [
+    {text: "When", class: "highlight-orange"},
+    {text: "you’re", class: "highlight-orange"},
+    {text: "ready...", class: "highlight-orange"}
+  ]
+];
+
+const contentDiv = document.getElementById("content");
+const orbEl = document.getElementById("orbEl");
+const btnEl = document.getElementById("bobBtn");
+
+let lineIndex = 0;
+
+function showWords(line, callback) {
+  const lineDiv = document.createElement("div");
+  lineDiv.className = "line";
+  contentDiv.appendChild(lineDiv);
+
+  line.forEach((word, i) => {
+    const span = document.createElement("span");
+    span.textContent = word.text;
+    span.className = `word ${word.class}`;
+    lineDiv.appendChild(span);
+    setTimeout(() => {
+      span.style.opacity = 1;
+    }, i * 400);
+  });
+
+  setTimeout(callback, line.length * 400 + 800);
+}
+
+function startFadeIn() {
+  if (lineIndex >= lines.length) {
+    orbEl.style.opacity = 1;
+    setTimeout(() => {
+      btnEl.style.opacity = 1;
+    }, 1000);
+    return;
+  }
+
+  showWords(lines[lineIndex], () => {
+    lineIndex++;
+    startFadeIn();
+  });
+}
+
+window.onload = () => {
+  startFadeIn();
+};
+</script>
+
+</body>
+</html>
