@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transformative Justice AI</title>
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 40px;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    .highlight-blue { color: #2aa6f2; }
+    .highlight-deepblue { color: #558ed5; }
+    .highlight-magenta { color: #e65c9c; }
+    .highlight-orange { color: #ffb347; }
+    .highlight-white { color: #ffffff; }
+
+    #content {
+      font-size: 1.5em;
+      line-height: 1.8;
+      max-width: 800px;
+      margin: auto;
+      padding-bottom: 120px;
+    }
+
+    .orb {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #6db5f2, #1f4ba0);
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+      opacity: 0;
+      transition: opacity 2s ease-in;
+    }
+
+    @keyframes pulse {
+      0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+      50% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+      100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+    }
+
+    #bobBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ffb347;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 1em;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 1.5s ease-in;
+    }
+
+    .fadein {
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+      margin-bottom: 20px;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="content"></div>
+<div class="orb" id="orbEl"></div>
+<button id="bobBtn">Talk to Bob</button>
+
+<script>
+  const lines = [
+    `<span class="highlight-white">Welcome</span> <span class="highlight-white">to</span> <span class="highlight-blue">Transformative</span> <span class="highlight-magenta">Justice</span> <span class="highlight-orange">AI.</span>`,
+    `<span class="highlight-white">An</span> <span class="highlight-deepblue">innovative</span> <span class="highlight-deepblue">tool</span> <span class="highlight-white">designed</span> <span class="highlight-white">to</span> <span class="highlight-white">support</span> <span class="highlight-magenta">new</span> <span class="highlight-blue">pathways</span> <span class="highlight-white">in</span> <span class="highlight-white">the</span> <span class="highlight-white">justice</span> <span class="highlight-white">system.</span>`,
+    `<span class="highlight-white">Here,</span> <span class="highlight-magenta">insight</span> <span class="highlight-white">replaces</span> <span class="highlight-orange">judgment</span> <span class="highlight-white">— and the process begins with</span> <span class="highlight-blue">understanding.</span>`,
+    `<span class="highlight-white">Brought</span> <span class="highlight-white">to</span> <span class="highlight-white">you</span> <span class="highlight-white">by</span> <span class="highlight-magenta">Amy</span> <span class="highlight-orange">Ashworth,</span> <span class="highlight-white">Commonwealth’s</span> <span class="highlight-white">Attorney</span> <span class="highlight-white">for</span> <span class="highlight-blue">Prince</span> <span class="highlight-blue">William</span> <span class="highlight-blue">County,</span> <span class="highlight-magenta">City</span> <span class="highlight-magenta">of</span> <span class="highlight-magenta">Manassas</span> <span class="highlight-orange">&</span> <span class="highlight-orange">Manassas</span> <span class="highlight-orange">Park</span> <span class="highlight-white">—</span>`,
+    `<span class="highlight-deepblue">Offering</span> <span class="highlight-blue">a</span> <span class="highlight-blue">new</span> <span class="highlight-orange">way</span> <span class="highlight-magenta">forward.</span>`,
+    `<span class="highlight-orange">When</span> <span class="highlight-orange">you’re</span> <span class="highlight-orange">ready...</span>`
+  ];
+
+  const contentDiv = document.getElementById("content");
+
+  let index = 0;
+  function showNext() {
+    if (index >= lines.length) {
+      document.getElementById("orbEl").style.opacity = 1;
+      setTimeout(() => {
+        document.getElementById("bobBtn").style.opacity = 1;
+      }, 1000);
+      return;
+    }
+
+    const div = document.createElement("div");
+    div.className = "line fadein";
+    div.innerHTML = lines[index];
+    contentDiv.appendChild(div);
+
+    index++;
+    setTimeout(showNext, 2500);
+  }
+
+  window.onload = () => {
+    showNext();
+  };
+</script>
+
+</body>
+</html>
