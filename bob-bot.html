@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Talk to Bob - Transformative Justice AI</title>
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .orb {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #6db5f2, #1f4ba0);
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+    }
+
+    @keyframes pulse {
+      0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+      50% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+      100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+    }
+
+    #script {
+      max-width: 800px;
+      margin: 120px auto 40px;
+      font-size: 1.4em;
+      line-height: 1.8;
+    }
+
+    .block {
+      opacity: 0;
+      transition: opacity 1.5s ease-in;
+    }
+
+    #botEmbed {
+      width: 100%;
+      max-width: 600px;
+      height: 500px;
+      margin: 40px auto;
+      background-color: #111;
+      border: 2px solid #333;
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 2s ease-in;
+    }
+
+    .highlight-deepblue { color: #5aa9e6; }
+    .highlight-magenta { color: #db5ca1; }
+    .highlight-orange { color: #ffae42; }
+    .highlight-white { color: #ffffff; }
+
+    .fade-line { opacity: 0; animation: fadeIn 2s forwards; }
+    .delay-1 { animation-delay: 0.5s; }
+    .delay-2 { animation-delay: 2s; }
+    .delay-3 { animation-delay: 4s; }
+
+    @media (max-width: 768px) {
+      #script {
+        font-size: 1.2em;
+        padding: 0 10px;
+        margin: 100px auto 30px;
+      }
+
+      .orb {
+        width: 50px;
+        height: 50px;
+        top: 20px;
+      }
+
+      #botEmbed {
+        height: 400px;
+        width: 90%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #script {
+        font-size: 1em;
+        margin: 80px auto 20px;
+      }
+
+      #botEmbed {
+        height: 350px;
+        width: 95%;
+      }
+
+      .orb {
+        width: 40px;
+        height: 40px;
+        top: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb"></div>
+
+<div id="script">
+  <div class="block" id="line1"><span class="highlight-magenta">Thank you</span> <span class="highlight-white">for being</span> <span class="highlight-deepblue">here.</span></div>
+  <div class="block" id="line2"><span class="highlight-orange">This space</span> <span class="highlight-white">is designed to help you</span> <span class="highlight-deepblue">understand your options.</span></div>
+  <div class="block" id="line3"><span class="highlight-white">Bob is here to</span> <span class="highlight-orange">guide you</span> <span class="highlight-white">through your</span> <span class="highlight-magenta">next steps.</span></div>
+</div>
+
+<div id="botEmbed">
+  <!-- Placeholder: UChat bot will be embedded here by developer -->
+</div>
+
+<script>
+function fadeInBlock(id, delay) {
+  setTimeout(() => {
+    document.getElementById(id).style.opacity = 1;
+  }, delay);
+}
+
+window.onload = () => {
+  fadeInBlock("line1", 1000);
+  fadeInBlock("line2", 3000);
+  fadeInBlock("line3", 5000);
+  setTimeout(() => {
+    document.getElementById("botEmbed").style.opacity = 1;
+  }, 7500);
+};
+</script>
+
+</body>
+</html>
