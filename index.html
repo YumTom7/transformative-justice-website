@@ -201,7 +201,11 @@
 <div id="contentWrapper"><div id="content"></div>
 
 </div></div>
-<div class="orb" id="orbEl"></div>
+<a href="bob-bot.html" id="orbElLink">
+  <div class="orb" id="orbEl"></div>
+</a>
+
+
 <button id="bobBtn">Talk to Bob</button>
 
 <script>
@@ -278,22 +282,6 @@ window.onload = () => {
   });
 };
 
-</script>
-<script>
-  window.chatbotSettings={"div_id":"","ref":"","style":"float"};
-  (function(d,s,id){
-    var js,fjs=d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)){return;}
-    js=d.createElement(s); js.id=id;
-    js.src='https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
-    fjs.parentNode.insertBefore(js, fjs);
-    js.onload=function(){
-      window.chatbotSDK.init({
-        "baseUrl":"https:\/\/sdk.dfktv2.com",
-        "flowToken":"hrewhjwdplphylb2"
-      });
-    }
-  }(document, 'script', 'chatbotWidgetV1'));
 </script>
 
 </body>
