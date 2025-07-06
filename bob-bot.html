@@ -147,6 +147,53 @@ window.onload = () => {
   }, 7500);
 };
 </script>
+<script>
+  // Fade in blocks and UChat bot after intro lines
+  function fadeInBlock(id, delay) {
+    setTimeout(() => {
+      document.getElementById(id).style.opacity = 1;
+    }, delay);
+  }
+
+  window.onload = () => {
+    fadeInBlock("line1", 1000);
+    fadeInBlock("line2", 3000);
+    fadeInBlock("line3", 5000);
+
+    setTimeout(() => {
+      // Fade in chat container visually
+      const botEmbed = document.getElementById("botEmbed");
+      botEmbed.style.opacity = 1;
+
+      // Initialize UChat in embedded mode
+      window.chatbotSettings = {
+        div_id: "botEmbed",
+        style: "embed",
+        position: "right",
+        embed_div_height: 500,
+        max_chat_width: "100%",
+        max_popup_width: "100%",
+        flowToken: "hrewhjwdplphylb2"
+      };
+
+      (function(d,s,id){
+        var js,fjs=d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)){return;}
+        js=d.createElement(s);
+        js.id=id;
+        js.src='https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
+        fjs.parentNode.insertBefore(js, fjs);
+        js.onload = function(){
+          window.chatbotSDK.init({
+            baseUrl: "https://sdk.dfktv2.com",
+            flowToken: "hrewhjwdplphylb2"
+          });
+        };
+      }(document, 'script', 'chatbotWidgetV1'));
+
+    }, 7500); // Triggers after final text fade-in
+  };
+</script>
 
 </body>
 </html>
