@@ -15,16 +15,17 @@
     }
 
     .orb {
-      position: fixed;
-      top: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #6db5f2, #1f4ba0);
-      animation: pulse 2s infinite;
-      box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #6db5f2, #1f4ba0);
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+  z-index: 1000; /* Keeps it above other elements */
+  margin-bottom: 30px; /* Optional: adds spacing below the orb */
     }
 
     @keyframes pulse {
