@@ -271,7 +271,13 @@ function startFadeIn() {
 
 window.onload = () => {
   startFadeIn();
+
+  // When the "Talk to Bob" button is clicked, redirect to bob-bot.html
+  document.getElementById("bobBtn").addEventListener("click", () => {
+    window.location.href = "bob-bot.html";
+  });
 };
+
 </script>
 <script>
   window.chatbotSettings={"div_id":"","ref":"","style":"float"};
