@@ -15,24 +15,17 @@
     }
 
     .orb {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #6db5f2, #1f4ba0);
-  animation: pulse 2s infinite;
-  box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
-  z-index: 1000;
-}
-    
-#orbWrapper {
-  position: relative;
-  text-align: center;
-  margin-top: 40px;
-}
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #6db5f2, #1f4ba0);
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+    }
 
     @keyframes pulse {
       0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
@@ -125,27 +118,13 @@
   </style>
 </head>
 <body>
-<div id="orbWrapper">
-  <div class="orb"></div>
 
-  <div id="script">
-    <div class="block" id="line1">
-      <span class="highlight-magenta">Thank you</span>
-      <span class="highlight-white">for being</span>
-      <span class="highlight-deepblue">here.</span>
-    </div>
-    <div class="block" id="line2">
-      <span class="highlight-orange">This space</span>
-      <span class="highlight-white">is designed to help you</span>
-      <span class="highlight-deepblue">understand your options.</span>
-    </div>
-    <div class="block" id="line3">
-      <span class="highlight-white">Bob is here to</span>
-      <span class="highlight-orange">guide you</span>
-      <span class="highlight-white">through your</span>
-      <span class="highlight-magenta">next steps.</span>
-    </div>
-  </div>
+<div class="orb"></div>
+
+<div id="script">
+  <div class="block" id="line1"><span class="highlight-magenta">Thank you</span> <span class="highlight-white">for being</span> <span class="highlight-deepblue">here.</span></div>
+  <div class="block" id="line2"><span class="highlight-orange">This space</span> <span class="highlight-white">is designed to help you</span> <span class="highlight-deepblue">understand your options.</span></div>
+  <div class="block" id="line3"><span class="highlight-white">Bob is here to</span> <span class="highlight-orange">guide you</span> <span class="highlight-white">through your</span> <span class="highlight-magenta">next steps.</span></div>
 </div>
 
 <div id="botEmbed">
@@ -153,6 +132,23 @@
 </div>
 
 <script>
+function fadeInBlock(id, delay) {
+  setTimeout(() => {
+    document.getElementById(id).style.opacity = 1;
+  }, delay);
+}
+
+window.onload = () => {
+  fadeInBlock("line1", 1000);
+  fadeInBlock("line2", 3000);
+  fadeInBlock("line3", 5000);
+  setTimeout(() => {
+    document.getElementById("botEmbed").style.opacity = 1;
+  }, 7500);
+};
+</script>
+<script>
+  // Fade in blocks and UChat bot after intro lines
   function fadeInBlock(id, delay) {
     setTimeout(() => {
       document.getElementById(id).style.opacity = 1;
@@ -195,7 +191,7 @@
         };
       }(document, 'script', 'chatbotWidgetV1'));
 
-    }, 7500);
+    }, 7500); // Triggers after final text fade-in
   };
 </script>
 
