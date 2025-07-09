@@ -9,8 +9,6 @@
       background-color: #000;
       color: white;
       font-family: 'Arial', sans-serif;
-      text-align: center;
-      padding: 40px 20px;
       margin: 0;
       overflow-x: hidden;
     }
@@ -30,9 +28,8 @@
     }
 
     #orbWrapper {
-      position: relative;
+      margin-top: 140px; /* space for fixed orb */
       text-align: center;
-      margin-top: 140px; /* spacing to account for fixed orb */
     }
 
     @keyframes pulse {
@@ -43,13 +40,13 @@
 
     #script {
       max-width: 800px;
-      margin: 120px auto 40px;
+      margin: 0 auto 40px;
       font-size: 1.4em;
       line-height: 1.8;
     }
 
     .block {
-      opacity: 0;
+      opacity: 1; /* Make text visible immediately */
       transition: opacity 1.5s ease-in;
     }
 
@@ -61,8 +58,7 @@
       background-color: #f2f2f2;
       border: 2px solid #333;
       border-radius: 12px;
-      opacity: 0;
-      transition: opacity 2s ease-in;
+      opacity: 1;
     }
 
     .highlight-deepblue { color: #5aa9e6; }
@@ -80,7 +76,6 @@
       #script {
         font-size: 1.2em;
         padding: 0 10px;
-        margin: 100px auto 30px;
       }
 
       #botEmbed {
@@ -98,7 +93,7 @@
 
       #script {
         font-size: 1em;
-        margin: 80px auto 20px;
+        margin: 20px auto;
       }
 
       #botEmbed {
@@ -121,4 +116,56 @@
       </div>
       <div class="block" id="line2">
         <span class="highlight-orange">This space</span>
-        <span class="highlight-white">i
+        <span class="highlight-white">is designed to help you</span>
+        <span class="highlight-deepblue">understand your options.</span>
+      </div>
+      <div class="block" id="line3">
+        <span class="highlight-white">Bob is here to</span>
+        <span class="highlight-orange">guide you</span>
+        <span class="highlight-white">through your</span>
+        <span class="highlight-magenta">next steps.</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="botEmbed">
+    <!-- UChat bot will render here -->
+  </div>
+
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        const botEmbed = document.getElementById("botEmbed");
+        botEmbed.style.opacity = 1;
+
+        window.chatbotSettings = {
+          div_id: "botEmbed",
+          style: "embed",
+          position: "right",
+          embed_div_height: 500,
+          max_chat_width: "100%",
+          max_popup_width: "100%",
+          flowToken: "hrewhjwdplphylb2"
+        };
+
+        (function(d, s, id) {
+          var js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) return;
+          js = d.createElement(s);
+          js.id = id;
+          js.src = 'https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
+          fjs.parentNode.insertBefore(js, fjs);
+          js.onload = function() {
+            window.chatbotSDK.init({
+              baseUrl: "https://sdk.dfktv2.com",
+              flowToken: "hrewhjwdplphylb2"
+            });
+          };
+        }(document, 'script', 'chatbotWidgetV1'));
+
+      }, 1000);
+    };
+  </script>
+</body>
+</html>
+
