@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script type='text/javascript' src='https://files.oaiusercontent.com/VI7NF2pbEnPWX7GQUTWZyjC2iHWcZI6qOg4f47JBoiui2VG8B4ySwmv_moPxg-_kDUN476LgbTLJA5pce1Ut0Q=='></script>
+<head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Talk to Bob - Transformative Justice AI</title>
   <style>
     body {
@@ -15,16 +16,17 @@
     }
 
     .orb {
-      position: fixed;
-      top: 30px;
+      position: absolute;
+      top: 0;
       left: 50%;
       transform: translateX(-50%);
-      width: 60px;
-      height: 60px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       background: radial-gradient(circle, #6db5f2, #1f4ba0);
       animation: pulse 2s infinite;
       box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+      z-index: 1000;
     }
 
     @keyframes pulse {
@@ -33,11 +35,18 @@
       100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
     }
 
+    #orbWrapper {
+      position: relative;
+      text-align: center;
+      margin-top: 40px;
+    }
+
     #script {
       max-width: 800px;
       margin: 120px auto 40px;
       font-size: 1.4em;
       line-height: 1.8;
+      padding: 0 10px;
     }
 
     .block {
@@ -62,138 +71,110 @@
     .highlight-orange { color: #ffae42; }
     .highlight-white { color: #ffffff; }
 
-    .fade-line { opacity: 0; animation: fadeIn 2s forwards; }
-    .delay-1 { animation-delay: 0.5s; }
-    .delay-2 { animation-delay: 2s; }
-    .delay-3 { animation-delay: 4s; }
-
-    
-@media (max-width: 768px) {
-  #script {
-    font-size: 1.4em !important;
-    line-height: 1.6 !important;
-  }
-
-  .orb {
-    width: 80px !important;
-    height: 80px !important;
-    top: 20px !important;
-  }
-
+    @media (max-width: 768px) {
+      body {
+        padding: 20px;
+      }
       #script {
         font-size: 1.2em;
-        padding: 0 10px;
-        margin: 100px auto 30px;
+        line-height: 1.6;
+        margin-top: 100px;
       }
-
       .orb {
         width: 50px;
         height: 50px;
         top: 20px;
       }
-
       #botEmbed {
-        height: 400px;
-        width: 90%;
+        height: 450px;
+        width: 95%;
       }
     }
 
     @media (max-width: 480px) {
       #script {
         font-size: 1em;
-        margin: 80px auto 20px;
+        margin-top: 80px;
       }
-
-      #botEmbed {
-        height: 350px;
-        width: 95%;
-      }
-
       .orb {
         width: 40px;
         height: 40px;
         top: 15px;
       }
+      #botEmbed {
+        height: 400px;
+        width: 98%;
+      }
     }
   </style>
 </head>
 <body>
+  <div id="orbWrapper">
+    <div class="orb"></div>
 
-<div class="orb"></div>
+    <div id="script">
+      <div class="block" id="line1">
+        <span class="highlight-magenta">Thank you</span>
+        <span class="highlight-white">for being</span>
+        <span class="highlight-deepblue">here.</span>
+      </div>
+      <div class="block" id="line2">
+        <span class="highlight-orange">This space</span>
+        <span class="highlight-white">is designed to help you</span>
+        <span class="highlight-deepblue">understand your options.</span>
+      </div>
+      <div class="block" id="line3">
+        <span class="highlight-white">Bob is here to</span>
+        <span class="highlight-orange">guide you</span>
+        <span class="highlight-white">through your</span>
+        <span class="highlight-magenta">next steps.</span>
+      </div>
+    </div>
+  </div>
 
-<div id="script">
-  <div class="block" id="line1"><span class="highlight-magenta">Thank you</span> <span class="highlight-white">for being</span> <span class="highlight-deepblue">here.</span></div>
-  <div class="block" id="line2"><span class="highlight-orange">This space</span> <span class="highlight-white">is designed to help you</span> <span class="highlight-deepblue">understand your options.</span></div>
-  <div class="block" id="line3"><span class="highlight-white">Bob is here to</span> <span class="highlight-orange">guide you</span> <span class="highlight-white">through your</span> <span class="highlight-magenta">next steps.</span></div>
-</div>
+  <div id="botEmbed"></div>
 
-<div id="botEmbed">
-  <!-- Placeholder: UChat bot will be embedded here by developer -->
-</div>
+  <script>
+    function fadeInBlock(id, delay) {
+      setTimeout(() => {
+        document.getElementById(id).style.opacity = 1;
+      }, delay);
+    }
 
-<script>
-function fadeInBlock(id, delay) {
-  setTimeout(() => {
-    document.getElementById(id).style.opacity = 1;
-  }, delay);
-}
+    window.onload = () => {
+      fadeInBlock("line1", 1000);
+      fadeInBlock("line2", 3000);
+      fadeInBlock("line3", 5000);
 
-window.onload = () => {
-  fadeInBlock("line1", 1000);
-  fadeInBlock("line2", 3000);
-  fadeInBlock("line3", 5000);
-  setTimeout(() => {
-    document.getElementById("botEmbed").style.opacity = 1;
-  }, 7500);
-};
-</script>
-<script>
-  // Fade in blocks and UChat bot after intro lines
-  function fadeInBlock(id, delay) {
-    setTimeout(() => {
-      document.getElementById(id).style.opacity = 1;
-    }, delay);
-  }
+      setTimeout(() => {
+        const botEmbed = document.getElementById("botEmbed");
+        botEmbed.style.opacity = 1;
 
-  window.onload = () => {
-    fadeInBlock("line1", 1000);
-    fadeInBlock("line2", 3000);
-    fadeInBlock("line3", 5000);
-
-    setTimeout(() => {
-      // Fade in chat container visually
-      const botEmbed = document.getElementById("botEmbed");
-      botEmbed.style.opacity = 1;
-
-      // Initialize UChat in embedded mode
-      window.chatbotSettings = {
-        div_id: "botEmbed",
-        style: "embed",
-        position: "right",
-        embed_div_height: 500,
-        max_chat_width: "100%",
-        max_popup_width: "100%",
-        flowToken: "hrewhjwdplphylb2"
-      };
-
-      (function(d,s,id){
-        var js,fjs=d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)){return;}
-        js=d.createElement(s);
-        js.id=id;
-        js.src='https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
-        fjs.parentNode.insertBefore(js, fjs);
-        js.onload = function(){
-          window.chatbotSDK.init({
-            baseUrl: "https://sdk.dfktv2.com",
-            flowToken: "hrewhjwdplphylb2"
-          });
+        window.chatbotSettings = {
+          div_id: "botEmbed",
+          style: "embed",
+          position: "right",
+          embed_div_height: 500,
+          max_chat_width: "100%",
+          max_popup_width: "100%",
+          flowToken: "hrewhjwdplphylb2"
         };
-      }(document, 'script', 'chatbotWidgetV1'));
 
-    }, 7500); // Triggers after final text fade-in
-  };
-</script>
-
+        (function(d,s,id){
+          var js,fjs=d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)){return;}
+          js=d.createElement(s); js.id=id;
+          js.src='https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
+          fjs.parentNode.insertBefore(js, fjs);
+          js.onload = function(){
+            window.chatbotSDK.init({
+              baseUrl: "https://sdk.dfktv2.com",
+              flowToken: "hrewhjwdplphylb2"
+            });
+          };
+        }(document, 'script', 'chatbotWidgetV1'));
+      }, 7500);
+    };
+  </script>
 </body>
 </html>
