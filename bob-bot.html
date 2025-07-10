@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,7 +32,7 @@
 
     #script {
       max-width: 800px;
-      margin: 80px auto 40px; /* ⬅️ Reduced from 140px to 80px */
+      margin: 80px auto 40px;
       font-size: 1.4em;
       line-height: 1.8;
     }
@@ -41,11 +42,16 @@
       transition: opacity 1.5s ease-in;
     }
 
-    #botEmbed {
+    #botContainer {
+      position: relative;
       width: 100%;
       max-width: 600px;
-      height: 500px;
       margin: 40px auto;
+    }
+
+    #botEmbed {
+      width: 100%;
+      height: 500px;
       background-color: #111;
       border: 2px solid #333;
       border-radius: 12px;
@@ -98,6 +104,36 @@
         height: 50px;
       }
     }
+
+    /* Fullscreen behavior on mobile */
+    .fullscreen-bot {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      z-index: 9999;
+      background-color: #111;
+    }
+
+    .close-fullscreen {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 1.2em;
+      color: white;
+      background: #444;
+      border: none;
+      padding: 10px;
+      z-index: 10000;
+      display: none;
+    }
+
+    .close-fullscreen.visible {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -122,7 +158,10 @@
     </div>
   </div>
 
-  <div id="botEmbed"></div>
+  <div id="botContainer">
+    <div id="botEmbed"></div>
+    <button id="closeBtn" class="close-fullscreen">Close</button>
+  </div>
 
   <script>
     function fadeInBlock(id, delay) {
@@ -165,6 +204,24 @@
         })(document, 'script', 'chatbotWidgetV1');
       }, 7500);
     };
+
+    // Fullscreen functionality
+    document.addEventListener("DOMContentLoaded", () => {
+      const bot = document.getElementById("botEmbed");
+      const closeBtn = document.getElementById("closeBtn");
+
+      bot.addEventListener("click", () => {
+        if (window.innerWidth <= 768) {
+          bot.classList.add("fullscreen-bot");
+          closeBtn.classList.add("visible");
+        }
+      });
+
+      closeBtn.addEventListener("click", () => {
+        bot.classList.remove("fullscreen-bot");
+        closeBtn.classList.remove("visible");
+      });
+    });
   </script>
 </body>
 </html>
