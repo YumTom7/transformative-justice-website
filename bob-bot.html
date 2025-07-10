@@ -1,18 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bob the Bot</title>
+  <title>Talk to Bob</title>
   <style>
-    /* Reset */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
+      margin: 0;
       background-color: black;
       color: white;
       font-family: Arial, sans-serif;
@@ -20,52 +15,62 @@
     }
 
     #orbWrapper {
-      position: fixed; /* make orb stay in place */
-      top: 20px;       /* reduce top space to minimize distance from text */
+      position: fixed;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
-      text-align: center;
-      margin-top: 0;  /* removed gap below orb */
+      animation: fadeIn 3s ease-in-out forwards;
     }
 
     #orb {
       width: 100px;
       height: 100px;
-      background-color: rgba(0, 123, 255, 0.7);
+      background: radial-gradient(circle, #3a86ff 0%, #03045e 70%);
       border-radius: 50%;
-      box-shadow: 0 0 20px 10px rgba(0, 123, 255, 0.5);
+      box-shadow: 0 0 30px rgba(58, 134, 255, 0.6);
       margin: 0 auto;
-      animation: fadeIn 2s ease-in-out forwards;
     }
 
-    .text-block {
-      margin-top: 140px; /* adjusts for orb height + padding */
+    #textWrapper {
       text-align: center;
+      margin-top: 130px;
+      animation: fadeIn 2s ease-in-out 1.5s forwards;
       opacity: 0;
-      animation: fadeIn 3s ease-in-out forwards;
-      animation-delay: 2s;
     }
 
-    .text-block p {
-      font-size: 1.2rem;
-      line-height: 1.6;
+    .text-line {
+      margin: 10px 0;
+      font-size: 1.4rem;
     }
 
-    .highlight-yellow { color: orange; }
-    .highlight-blue { color: #4da6ff; }
-    .highlight-pink { color: violet; }
+    .highlight-pink {
+      color: #ff69b4;
+    }
 
-    #chatContainer {
-      margin: 40px auto;
+    .highlight-orange {
+      color: orange;
+    }
+
+    .highlight-blue {
+      color: #1e90ff;
+    }
+
+    #chatWrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      animation: fadeIn 2s ease-in-out 2.5s forwards;
+      opacity: 0;
+    }
+
+    .chat-container {
       width: 90%;
-      max-width: 768px;
-      min-height: 500px;
-      border-radius: 8px;
+      max-width: 800px;
+      height: 600px;
+      border-radius: 10px;
       overflow: hidden;
-      animation: fadeIn 2s ease-in-out forwards;
-      animation-delay: 4s;
-      opacity: 0;
+      border: 1px solid #444;
     }
 
     iframe {
@@ -75,48 +80,53 @@
     }
 
     @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
     }
 
     @media (max-width: 600px) {
-      .text-block p {
-        font-size: 1.4rem;
+      .text-line {
+        font-size: 1.2rem;
+      }
+
+      .chat-container {
+        height: 80vh;
       }
 
       #orb {
         width: 80px;
         height: 80px;
       }
-
-      .text-block {
-        margin-top: 120px;
-      }
-
-      #chatContainer {
-        min-height: 600px;
-      }
     }
   </style>
 </head>
-<body>
 
+<body>
   <div id="orbWrapper">
     <div id="orb"></div>
   </div>
 
-  <div class="text-block">
-    <p><span class="highlight-pink">Thank you</span> for being <span class="highlight-blue">here</span>.</p>
-    <p><span class="highlight-yellow">This space</span> is designed to help you <span class="highlight-blue">understand your options</span>.</p>
-    <p>Bob is here to <span class="highlight-yellow">guide you</span> through your <span class="highlight-pink">next steps</span>.</p>
+  <div id="textWrapper">
+    <div class="text-line">
+      <span class="highlight-pink">Thank you</span> for being <span class="highlight-blue">here</span>.
+    </div>
+    <div class="text-line">
+      <span class="highlight-orange">This space</span> is designed to help you <span class="highlight-blue">understand your options</span>.
+    </div>
+    <div class="text-line">
+      Bob is here to <span class="highlight-orange">guide you</span> through your <span class="highlight-pink">next steps</span>.
+    </div>
   </div>
 
-  <div id="chatContainer">
-    <iframe src="https://your-uchat-embed-link.com"></iframe>
+  <div id="chatWrapper">
+    <div class="chat-container">
+      <iframe src="https://app.uchat.com.au/uchat/bot-preview/138999/1bfa2ed1c5a24f3ea3b257ef0718d94c"></iframe>
+    </div>
   </div>
-
 </body>
+
 </html>
-
-
-
