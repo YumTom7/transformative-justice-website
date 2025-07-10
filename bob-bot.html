@@ -1,132 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Talk to Bob</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Talk to Bob - Mobile Optimized</title>
   <style>
     body {
-      margin: 0;
-      background-color: black;
+      background-color: #000;
       color: white;
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 0;
+      margin: 0;
       overflow-x: hidden;
     }
 
-    #orbWrapper {
+    .orb {
       position: fixed;
-      top: 10px;
+      top: 0;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 1000;
-      animation: fadeIn 3s ease-in-out forwards;
-    }
-
-    #orb {
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, #3a86ff 0%, #03045e 70%);
+      margin-top: 0;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      box-shadow: 0 0 30px rgba(58, 134, 255, 0.6);
-      margin: 0 auto;
+      background: radial-gradient(circle, #6db5f2, #1f4ba0);
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
+      z-index: 1000;
     }
 
-    #textWrapper {
-      text-align: center;
-      margin-top: 130px;
-      animation: fadeIn 2s ease-in-out 1.5s forwards;
-      opacity: 0;
-    }
-
-    .text-line {
-      margin: 10px 0;
-      font-size: 1.4rem;
-    }
-
-    .highlight-pink {
-      color: #ff69b4;
-    }
-
-    .highlight-orange {
-      color: orange;
-    }
-
-    .highlight-blue {
-      color: #1e90ff;
-    }
-
-    #chatWrapper {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-      animation: fadeIn 2s ease-in-out 2.5s forwards;
-      opacity: 0;
-    }
-
-    .chat-container {
-      width: 90%;
+    #script {
       max-width: 800px;
-      height: 600px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid #444;
+      margin: 100px auto 40px;
+      font-size: 1.4em;
+      line-height: 1.8;
     }
 
-    iframe {
+    .block {
+      opacity: 0;
+      transition: opacity 1.5s ease-in;
+    }
+
+    #botEmbed {
       width: 100%;
-      height: 100%;
-      border: none;
+      max-width: 600px;
+      height: 500px;
+      margin: 40px auto;
+      background-color: #111;
+      border: 2px solid #333;
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 2s ease-in;
     }
 
-    @keyframes fadeIn {
-      0% {
-        opacity: 0;
+    .highlight-deepblue { color: #5aa9e6; }
+    .highlight-magenta { color: #db5ca1; }
+    .highlight-orange { color: #ffae42; }
+    .highlight-white { color: #ffffff; }
+
+    @keyframes pulse {
+      0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+      50% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+      100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+    }
+
+    @media (max-width: 768px) {
+      #script {
+        font-size: 1.2em;
+        margin: 100px auto 30px;
+        padding: 0 10px;
       }
-      100% {
-        opacity: 1;
+
+      .orb {
+        width: 60px;
+        height: 60px;
+      }
+
+      #botEmbed {
+        height: 400px;
+        width: 95%;
       }
     }
 
-    @media (max-width: 600px) {
-      .text-line {
-        font-size: 1.2rem;
+    @media (max-width: 480px) {
+      #script {
+        font-size: 1em;
+        margin: 90px auto 20px;
       }
 
-      .chat-container {
-        height: 80vh;
+      #botEmbed {
+        height: 350px;
+        width: 100%;
       }
 
-      #orb {
-        width: 80px;
-        height: 80px;
+      .orb {
+        width: 50px;
+        height: 50px;
       }
     }
   </style>
 </head>
-
 <body>
-  <div id="orbWrapper">
-    <div id="orb"></div>
+  <div class="orb"></div>
+
+  <div id="script">
+    <div class="block" id="line1">
+      <span class="highlight-magenta">Thank you</span>
+      <span class="highlight-white"> for being </span>
+      <span class="highlight-deepblue">here.</span>
+    </div>
+    <div class="block" id="line2">
+      <span class="highlight-orange">This space</span>
+      <span class="highlight-white"> is designed to help you </span>
+      <span class="highlight-deepblue">understand your options.</span>
+    </div>
+    <div class="block" id="line3">
+      <span class="highlight-white">Bob is here to </span>
+      <span class="highlight-orange">guide you </span>
+      <span class="highlight-white">through your </span>
+      <span class="highlight-magenta">next steps.</span>
+    </div>
   </div>
 
-  <div id="textWrapper">
-    <div class="text-line">
-      <span class="highlight-pink">Thank you</span> for being <span class="highlight-blue">here</span>.
-    </div>
-    <div class="text-line">
-      <span class="highlight-orange">This space</span> is designed to help you <span class="highlight-blue">understand your options</span>.
-    </div>
-    <div class="text-line">
-      Bob is here to <span class="highlight-orange">guide you</span> through your <span class="highlight-pink">next steps</span>.
-    </div>
-  </div>
+  <div id="botEmbed"></div>
 
-  <div id="chatWrapper">
-    <div class="chat-container">
-      <iframe src="https://app.uchat.com.au/uchat/bot-preview/138999/1bfa2ed1c5a24f3ea3b257ef0718d94c"></iframe>
-    </div>
-  </div>
+  <script>
+    function fadeInBlock(id, delay) {
+      setTimeout(() => {
+        document.getElementById(id).style.opacity = 1;
+      }, delay);
+    }
+
+    window.onload = () => {
+      fadeInBlock("line1", 1000);
+      fadeInBlock("line2", 3000);
+      fadeInBlock("line3", 5000);
+
+      setTimeout(() => {
+        const botEmbed = document.getElementById("botEmbed");
+        botEmbed.style.opacity = 1;
+
+        window.chatbotSettings = {
+          div_id: "botEmbed",
+          style: "embed",
+          position: "right",
+          embed_div_height: 500,
+          max_chat_width: "100%",
+          max_popup_width: "100%",
+          flowToken: "hrewhjwdplphylb2"
+        };
+
+        (function(d,s,id){
+          var js,fjs=d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)){return;}
+          js=d.createElement(s); js.id=id;
+          js.src='https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
+          fjs.parentNode.insertBefore(js, fjs);
+          js.onload = function(){
+            window.chatbotSDK.init({
+              baseUrl: "https://sdk.dfktv2.com",
+              flowToken: "hrewhjwdplphylb2"
+            });
+          };
+        })(document, 'script', 'chatbotWidgetV1');
+      }, 7500);
+    };
+  </script>
 </body>
-
 </html>
