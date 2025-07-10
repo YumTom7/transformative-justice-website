@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Talk to Bob - Mobile Optimized</title>
   <style>
     body {
@@ -31,7 +31,7 @@
 
     #script {
       max-width: 800px;
-      margin: 140px auto 40px;
+      margin: 80px auto 40px; /* ⬅️ Reduced from 140px to 80px */
       font-size: 1.4em;
       line-height: 1.8;
     }
@@ -50,7 +50,6 @@
       border: 2px solid #333;
       border-radius: 12px;
       opacity: 0;
-      visibility: hidden;
       transition: opacity 2s ease-in;
     }
 
@@ -69,7 +68,7 @@
       #script {
         font-size: 1.2em;
         padding: 0 10px;
-        margin: 120px auto 30px;
+        margin: 80px auto 30px;
       }
 
       .orb {
@@ -86,7 +85,7 @@
     @media (max-width: 480px) {
       #script {
         font-size: 1em;
-        margin: 110px auto 20px;
+        margin: 60px auto 20px;
       }
 
       #botEmbed {
@@ -132,7 +131,7 @@
       }, delay);
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    window.onload = () => {
       fadeInBlock("line1", 1000);
       fadeInBlock("line2", 3000);
       fadeInBlock("line3", 5000);
@@ -140,7 +139,6 @@
       setTimeout(() => {
         const botEmbed = document.getElementById("botEmbed");
         botEmbed.style.opacity = 1;
-        botEmbed.style.visibility = 'visible';
 
         window.chatbotSettings = {
           div_id: "botEmbed",
@@ -152,13 +150,13 @@
           flowToken: "hrewhjwdplphylb2"
         };
 
-        (function (d, s, id) {
-          var js, fjs = d.getElementsByTagName(s)[0];
-          if (d.getElementById(id)) return;
-          js = d.createElement(s); js.id = id;
-          js.src = 'https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
+        (function(d,s,id){
+          var js,fjs=d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)){return;}
+          js=d.createElement(s); js.id=id;
+          js.src='https://sdk.dfktv2.com/js/sdk.js?v=0362d2749f85783ba33f7be000125b04';
           fjs.parentNode.insertBefore(js, fjs);
-          js.onload = function () {
+          js.onload = function(){
             window.chatbotSDK.init({
               baseUrl: "https://sdk.dfktv2.com",
               flowToken: "hrewhjwdplphylb2"
@@ -166,9 +164,10 @@
           };
         })(document, 'script', 'chatbotWidgetV1');
       }, 7500);
-    });
+    };
   </script>
 </body>
 </html>
+
 
 
