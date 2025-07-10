@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Talk to Bob - Mobile Optimized</title>
+  <title>Talk to Bob</title>
   <style>
     body {
       background-color: #000;
@@ -32,7 +31,7 @@
 
     #script {
       max-width: 800px;
-      margin: 80px auto 40px;
+      margin: 140px auto 40px;
       font-size: 1.4em;
       line-height: 1.8;
     }
@@ -42,21 +41,21 @@
       transition: opacity 1.5s ease-in;
     }
 
-    #botContainer {
-      position: relative;
-      width: 100%;
-      max-width: 600px;
-      margin: 40px auto;
-    }
-
     #botEmbed {
       width: 100%;
+      max-width: 600px;
       height: 500px;
+      margin: 40px auto;
       background-color: #111;
       border: 2px solid #333;
       border-radius: 12px;
       opacity: 0;
       transition: opacity 2s ease-in;
+      overflow: hidden;
+    }
+
+    #closeEmbed {
+      display: none;
     }
 
     .highlight-deepblue { color: #5aa9e6; }
@@ -74,7 +73,7 @@
       #script {
         font-size: 1.2em;
         padding: 0 10px;
-        margin: 80px auto 30px;
+        margin: 140px auto 30px;
       }
 
       .orb {
@@ -86,53 +85,37 @@
         height: 400px;
         width: 95%;
       }
-    }
 
-    @media (max-width: 480px) {
-      #script {
+      #botEmbed.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        background-color: #000;
+        overflow-y: auto;
+        border-radius: 0;
+        transition: all 0.4s ease-in-out;
+      }
+
+      #closeEmbed {
+        display: block;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: #222;
+        color: white;
+        border: none;
+        padding: 8px 14px;
         font-size: 1em;
-        margin: 60px auto 20px;
+        z-index: 10000;
+        border-radius: 6px;
       }
 
-      #botEmbed {
-        height: 350px;
-        width: 100%;
+      #closeEmbed.hidden {
+        display: none;
       }
-
-      .orb {
-        width: 50px;
-        height: 50px;
-      }
-    }
-
-    /* Fullscreen behavior on mobile */
-    .fullscreen-bot {
-      position: fixed !important;
-      top: 0;
-      left: 0;
-      width: 100vw !important;
-      height: 100vh !important;
-      max-width: none !important;
-      border-radius: 0 !important;
-      z-index: 9999;
-      background-color: #111;
-    }
-
-    .close-fullscreen {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      font-size: 1.2em;
-      color: white;
-      background: #444;
-      border: none;
-      padding: 10px;
-      z-index: 10000;
-      display: none;
-    }
-
-    .close-fullscreen.visible {
-      display: block;
     }
   </style>
 </head>
@@ -158,9 +141,9 @@
     </div>
   </div>
 
-  <div id="botContainer">
-    <div id="botEmbed"></div>
-    <button id="closeBtn" class="close-fullscreen">Close</button>
+  <div id="botEmbed">
+    <!-- UChat embed box -->
+    <button id="closeEmbed" class="hidden">Close</button>
   </div>
 
   <script>
@@ -205,26 +188,32 @@
       }, 7500);
     };
 
-    // Fullscreen functionality
-    document.addEventListener("DOMContentLoaded", () => {
-      const bot = document.getElementById("botEmbed");
-      const closeBtn = document.getElementById("closeBtn");
+    // Mobile fullscreen behavior
+    document.addEventListener("DOMContentLoaded", function () {
+      const botEmbed = document.getElementById("botEmbed");
+      const closeBtn = document.getElementById("closeEmbed");
 
-      bot.addEventListener("click", () => {
-        if (window.innerWidth <= 768) {
-          bot.classList.add("fullscreen-bot");
-          closeBtn.classList.add("visible");
-        }
-      });
+      function isMobile() {
+        return window.innerWidth <= 768;
+      }
 
-      closeBtn.addEventListener("click", () => {
-        bot.classList.remove("fullscreen-bot");
-        closeBtn.classList.remove("visible");
-      });
+      if (isMobile()) {
+        botEmbed.addEventListener("click", function () {
+          botEmbed.classList.add("fullscreen");
+          closeBtn.classList.remove("hidden");
+        });
+
+        closeBtn.addEventListener("click", function (e) {
+          e.stopPropagation(); // Prevent reopening
+          botEmbed.classList.remove("fullscreen");
+          closeBtn.classList.add("hidden");
+        });
+      }
     });
   </script>
 </body>
 </html>
+
 
 
 
