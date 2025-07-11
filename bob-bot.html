@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Talk to Bob</title>
+  <title>Talk to Bob - Mobile Optimized</title>
   <style>
     body {
       background-color: #000;
@@ -16,7 +16,7 @@
     }
 
     .orb {
-      position: fixed;
+      position: relative;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
@@ -26,12 +26,11 @@
       background: radial-gradient(circle, #6db5f2, #1f4ba0);
       animation: pulse 2s infinite;
       box-shadow: 0 0 20px rgba(0, 128, 255, 0.7);
-      z-index: 1000;
     }
 
     #script {
       max-width: 800px;
-      margin: 140px auto 40px;
+      margin: 80px auto 40px;
       font-size: 1.4em;
       line-height: 1.8;
     }
@@ -51,11 +50,6 @@
       border-radius: 12px;
       opacity: 0;
       transition: opacity 2s ease-in;
-      overflow: hidden;
-    }
-
-    #closeEmbed {
-      display: none;
     }
 
     .highlight-deepblue { color: #5aa9e6; }
@@ -71,9 +65,9 @@
 
     @media (max-width: 768px) {
       #script {
-        font-size: 1.2em;
+        font-size: 1.4em;
         padding: 0 10px;
-        margin: 140px auto 30px;
+        margin: 40px auto 30px;
       }
 
       .orb {
@@ -85,36 +79,22 @@
         height: 400px;
         width: 95%;
       }
+    }
 
-      #botEmbed.fullscreen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 9999;
-        background-color: #000;
-        overflow-y: auto;
-        border-radius: 0;
-        transition: all 0.4s ease-in-out;
+    @media (max-width: 480px) {
+      #script {
+        font-size: 1.2em;
+        margin: 30px auto 20px;
       }
 
-      #closeEmbed {
-        display: block;
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        background: #222;
-        color: white;
-        border: none;
-        padding: 8px 14px;
-        font-size: 1em;
-        z-index: 10000;
-        border-radius: 6px;
+      #botEmbed {
+        height: 350px;
+        width: 100%;
       }
 
-      #closeEmbed.hidden {
-        display: none;
+      .orb {
+        width: 50px;
+        height: 50px;
       }
     }
   </style>
@@ -141,10 +121,7 @@
     </div>
   </div>
 
-  <div id="botEmbed">
-    <!-- UChat embed box -->
-    <button id="closeEmbed" class="hidden">Close</button>
-  </div>
+  <div id="botEmbed"></div>
 
   <script>
     function fadeInBlock(id, delay) {
@@ -187,29 +164,6 @@
         })(document, 'script', 'chatbotWidgetV1');
       }, 7500);
     };
-
-    // Mobile fullscreen behavior
-    document.addEventListener("DOMContentLoaded", function () {
-      const botEmbed = document.getElementById("botEmbed");
-      const closeBtn = document.getElementById("closeEmbed");
-
-      function isMobile() {
-        return window.innerWidth <= 768;
-      }
-
-      if (isMobile()) {
-        botEmbed.addEventListener("click", function () {
-          botEmbed.classList.add("fullscreen");
-          closeBtn.classList.remove("hidden");
-        });
-
-        closeBtn.addEventListener("click", function (e) {
-          e.stopPropagation(); // Prevent reopening
-          botEmbed.classList.remove("fullscreen");
-          closeBtn.classList.add("hidden");
-        });
-      }
-    });
   </script>
 </body>
 </html>
