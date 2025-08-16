@@ -84,18 +84,21 @@
 </div>
 
 <script>
+/* ====== CONFIG ====== */
 const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
-const FORCE_VOICE_NAME = ""; // set to an exact voice if you want, e.g. "Google UK English Male"
+const FORCE_VOICE_NAME = ""; // e.g. "Google UK English Male"
 const MALE_PATS = [/Google UK English Male/i,/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
+/* ===================== */
 
-// --- refs
+/* refs already in your HTML */
 const introScreen = document.getElementById('introScreen');
 const qrScreen    = document.getElementById('qrScreen');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
 
-// Add a small “Play narration” button under the tagline (replicates the working gesture flow)
+/* Add “Play narration” button under the tagline */
 (function addPlayBtn(){
+  if (document.getElementById('playVoice')) return;
   const btn = document.createElement('button');
   btn.id = 'playVoice';
   btn.textContent = '🔊 Play narration';
@@ -104,67 +107,134 @@ const beginBtn    = document.getElementById('begin');
   wrap.insertBefore(btn, document.getElementById('script'));
 })();
 
-// Build dimmed words (keeps your styling)
+/* ---------- TIGHT SYNC PATCH ---------- */
+/* 1) Visible spans (unchanged look) */
 const scriptEl = document.getElementById('script');
-const words = TEXT.split(/\s+/);
-const spans = words.map((w,i)=>{ const s=document.createElement('span'); s.className='word'; s.textContent=w+(i<words.length-1?' ':''); scriptEl.appendChild(s); return s; });
-const starts = (()=>{ let a=[],i=0; words.forEach((w,k)=>{a.push(i); i+=w.length+(k<words.length-1?1:0)}); return a; })();
+const visibleWords = TEXT.split(/\s+/);
+const spans = visibleWords.map((w, i) => {
+  const s = document.createElement('span');
+  s.className = 'word';
+  s.textContent = w + (i < visibleWords.length - 1 ? ' ' : '');
+  scriptEl.appendChild(s);
+  return s;
+});
 
-// Highlight helpers
-let cur=-1, timer=null;
-function hi(n){ if(cur>=0&&spans[cur]) spans[cur].classList.remove('on'); cur=n; if(spans[cur]) spans[cur].classList.add('on'); }
-function startFallback(ms){ stopFallback(); const step=Math.max(120, ms/words.length); let i=0; hi(0); timer=setInterval(()=>{ i++; if(i>=words.length){stopFallback();return;} hi(i); }, step); }
-function stopFallback(){ if(timer){ clearInterval(timer); timer=null; }}
+/* 2) Normalized tokens for timing only */
+function normWord(w){
+  return w
+    .replace(/[\u2019\u2018]/g, "'")   // curly → straight apostrophes
+    .replace(/[\u2014\u2013]/g, "-")  // em/en dash → hyphen
+    .replace(/\s+/g, " ")
+    .trim();
+}
+const normTokens = visibleWords.map(normWord);
 
-// Speech helpers (robust)
+/* Start offsets in normalized stream (tokens joined by a single space) */
+const tokenStarts = (() => {
+  const starts = []; let pos = 0;
+  for (let i = 0; i < normTokens.length; i++){
+    starts.push(pos);
+    pos += normTokens[i].length + (i < normTokens.length - 1 ? 1 : 0);
+  }
+  return starts;
+})();
+
+/* Helpers */
+let cur = -1, fallbackTimer = null, calib = 0;
+function highlight(i){
+  if (i === cur) return;
+  if (cur >= 0 && spans[cur]) spans[cur].classList.remove('on');
+  cur = Math.max(0, Math.min(i, spans.length - 1));
+  if (spans[cur]) spans[cur].classList.add('on');
+}
+function startFallback(totalMs){
+  stopFallback();
+  const step = Math.max(110, totalMs / spans.length);
+  let i = 0; highlight(0);
+  fallbackTimer = setInterval(() => {
+    i++; if (i >= spans.length){ stopFallback(); return; }
+    highlight(i);
+  }, step);
+}
+function stopFallback(){ if (fallbackTimer){ clearInterval(fallbackTimer); fallbackTimer = null; } }
+/* Binary search: char position → token index */
+function tokenIndexAt(charPos){
+  let lo = 0, hi = tokenStarts.length - 1, ans = 0;
+  while (lo <= hi){
+    const mid = (lo + hi) >> 1;
+    if (tokenStarts[mid] <= charPos){ ans = mid; lo = mid + 1; }
+    else hi = mid - 1;
+  }
+  return ans;
+}
+/* ---------- END SYNC PATCH ---------- */
+
+/* Speech helpers */
 function voices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
 function pick(vs){
-  if(FORCE_VOICE_NAME){ const ex=vs.find(v=>v.name===FORCE_VOICE_NAME); if(ex) return ex; }
-  for(const rx of MALE_PATS){ const hit=vs.find(v=>rx.test(`${v.name} ${v.voiceURI||""}`)&&/en/i.test(v.lang||"")); if(hit) return hit; }
-  return vs.find(v=>/en/i.test(v.lang||"")&&/male/i.test(`${v.name} ${v.voiceURI||""}`)) || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
+  if (FORCE_VOICE_NAME){ const ex = vs.find(v=>v.name===FORCE_VOICE_NAME); if (ex) return ex; }
+  for (const rx of MALE_PATS){
+    const hit = vs.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
+    if (hit) return hit;
+  }
+  return vs.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
+      || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
 }
 async function waitForVoices(maxMs=2000){
-  const t0=performance.now();
-  while(performance.now()-t0<maxMs){ const vs=voices(); if(vs.length) return vs; await new Promise(r=>setTimeout(r,100)); }
+  const t0 = performance.now();
+  while (performance.now()-t0 < maxMs){
+    const vs = voices(); if (vs.length) return vs;
+    await new Promise(r=>setTimeout(r,100));
+  }
   return voices();
 }
 
-// Start narration on demand (gesture) – this is the behavior that worked before
+/* Start narration (gesture) with tight sync */
 async function playNarration(){
-  if(!('speechSynthesis' in window)) return;
+  if (!('speechSynthesis' in window)) return;
   const vs = await waitForVoices();
   const v  = pick(vs);
 
-  // reset highlights
-  spans.forEach(s=>s.classList.remove('on')); cur=-1;
+  // reset highlight
+  spans.forEach(s=>s.classList.remove('on')); cur = -1; calib = 0;
 
   const u = new SpeechSynthesisUtterance(TEXT);
-  if(v) u.voice=v;
-  u.rate=0.95; u.pitch=0.9; u.volume=1.0;
+  if (v) u.voice = v;
+  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
 
-  u.onstart   = ()=>{ hi(0); startFallback(words.length*190); };
-  u.onboundary= e=>{
-    if(e.name==="word" && typeof e.charIndex==="number"){
-      const i = starts.findIndex((st,idx)=> e.charIndex>=st && (idx===starts.length-1 || e.charIndex<starts[idx+1]));
-      if(i>=0) hi(i);
-    }
+  u.onstart = () => { highlight(0); startFallback(spans.length * 180); calib = 0; };
+
+  u.onboundary = (e) => {
+    if (e.name !== "word" || typeof e.charIndex !== "number") return;
+
+    // Calibrate once to align engine charIndex to our normalized stream
+    if (calib === 0) calib = e.charIndex;
+
+    const adjusted = Math.max(0, e.charIndex - calib);
+    const maxPos = tokenStarts[tokenStarts.length - 1] + normTokens[normTokens.length - 1].length;
+    const pos = Math.min(adjusted, maxPos);
+
+    const idx = tokenIndexAt(pos);
+    highlight(idx);
   };
-  u.onend     = ()=>{ stopFallback(); };
 
-  try{ speechSynthesis.cancel(); speechSynthesis.speak(u); }catch{}
+  u.onend = () => { stopFallback(); };
+
+  try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
 }
 
-// Show Begin after 1s (independent of speech) so the flow never blocks
-setTimeout(()=>{ beginWrap.style.opacity=1; }, 1000);
-
-// Button actions
-document.getElementById('playVoice').addEventListener('click', playNarration);
-beginBtn.addEventListener('click', ()=>{
+/* UI wiring */
+setTimeout(()=>{ beginWrap.style.opacity = 1; }, 1000); // Begin appears regardless
+document.addEventListener('click', (e)=>{
+  if (e.target && e.target.id === 'playVoice') playNarration();
+});
+beginBtn.addEventListener('click', () => {
   try{ speechSynthesis.cancel(); }catch{}
-  introScreen.style.display='none';
-  qrScreen.style.display='grid';
+  introScreen.style.display = 'none';
+  qrScreen.style.display = 'grid';
 });
 </script>
+
 
 
 </body>
