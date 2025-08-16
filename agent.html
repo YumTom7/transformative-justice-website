@@ -1,114 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>CaseConnect – Guided Intro</title>
-<meta name="robots" content="noindex,nofollow"/>
-<style>
-  :root{ --bg:#000; --ink:#e7eef8; --blue:#2aa6f2; }
-  html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
-    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-  .screen{ position:fixed; inset:0; display:grid; place-items:center; }
-
-  /* Intro */
-  .introWrap{ text-align:center; max-width:1100px; padding:7vh 6vw; }
-  .headline{ margin:0 0 8px; font-weight:900; font-size:clamp(36px,6vw,84px); }
-  .headline .case{ color:#fff }
-  .headline .connect{
-    background:linear-gradient(180deg,#2aa6f2 0%,#77c7ff 100%);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .tagline{ margin:0 0 16px; font-size:clamp(16px,2.1vw,28px); opacity:.9 }
-
-  .controls{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:18px; }
-  #voicePicker{
-    padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.25);
-    background:#0b0f15; color:#cfe9ff;
-  }
-  .playBtn{
-    appearance:none; border:1px solid rgba(255,255,255,.25);
-    border-radius:18px; padding:10px 14px; background:transparent; color:#9ed0ff; cursor:pointer;
-  }
-
-  /* Big paragraph (plain text, no highlighting) */
-  .script{
-    margin:24px auto 22px; max-width:1000px; line-height:1.6;
-    font-size:clamp(22px,2.8vw,40px); text-align:center;
-  }
-
-  /* Begin button above orb */
-  .beginWrap{
-    position:fixed; bottom:165px; left:50%; transform:translateX(-50%);
-    opacity:0; transition:opacity .6s ease;
-  }
-  .beginBtn{ appearance:none; border:0; border-radius:22px; padding:12px 20px; font-weight:800;
-    background:#ffb347; color:#000; cursor:pointer; }
-
-  /* Orb */
-  .orb{
-    position:fixed; bottom:34px; left:50%; transform:translateX(-50%);
-    width:78px; height:78px; border-radius:50%;
-    background:radial-gradient(circle,#6db5f2,#1f4ba0);
-    box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
-    animation:p 2s infinite; opacity:.9;
-  }
-  @keyframes p{
-    0%{transform:translateX(-50%) scale(1)}
-    50%{transform:translateX(-50%) scale(1.12)}
-    100%{transform:translateX(-50%) scale(1)}
-  }
-
-  /* QR screen */
-  .qrScreen{ display:none; }
-  .qrCard{
-    text-align:center; padding:34px 30px; border:1px solid rgba(255,255,255,.18);
-    border-radius:18px; background:rgba(255,255,255,.04); box-shadow:0 12px 44px rgba(0,0,0,.45);
-  }
-  .qrTitle{ margin:0 0 12px; font-size:clamp(26px,3.5vw,42px); font-weight:900; color:#cfe9ff }
-  #qrBox{
-    width:min(300px,65vmin); height:min(300px,65vmin); margin:12px auto; display:grid; place-items:center;
-    border-radius:16px; background:rgba(255,255,255,.06); border:1px dashed rgba(255,255,255,.25); color:#9ed0ff;
-  }
-
-  @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
-</style>
-</head>
-<body>
-
-<!-- Screen 1 -->
-<div class="screen" id="introScreen">
-  <div class="introWrap">
-    <h1 class="headline">
-      <span class="case">Welcome to </span><span class="connect">CaseConnect</span>
-    </h1>
-    <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
-
-    <div class="controls">
-      <select id="voicePicker" aria-label="Choose voice"></select>
-      <button class="playBtn" id="playVoice">🔊 Play narration</button>
-    </div>
-
-    <div class="script" id="script">
-      Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.
-    </div>
-  </div>
-
-  <div class="beginWrap" id="beginWrap"><button class="beginBtn" id="begin">Begin</button></div>
-  <div class="orb" aria-hidden="true"></div>
-</div>
-
-<!-- Screen 2 (QR placeholder) -->
-<div class="screen qrScreen" id="qrScreen">
-  <div class="qrCard">
-    <h2 class="qrTitle">Scan</h2>
-    <div id="qrBox">Embed your QR code here</div>
-  </div>
-</div>
-
 <script>
+/* --- CONFIG --- */
+/* Pull the text from your paragraph block */
 const TEXT = document.getElementById('script').textContent.trim();
-const voicePicker = document.getElementById('voicePicker');
+
+/* Optional: hard-lock a specific voice by name (exact match), e.g.
+   "Google US English", "Microsoft Guy Online (Natural) - English (United States)", "Alex" */
+const FORCE_VOICE_NAME = "";
+/* ------------- */
+
+/* Refs */
 const playBtn     = document.getElementById('playVoice');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
@@ -118,49 +18,59 @@ const qrScreen    = document.getElementById('qrScreen');
 /* Show Begin after a moment */
 setTimeout(()=>{ beginWrap.style.opacity = 1; }, 900);
 
-/* Voice handling */
+/* Voice utils */
 function getVoices(){ try { return speechSynthesis.getVoices() || []; } catch { return []; } }
 
-async function loadVoices(){
+async function waitForVoices(maxMs=2000){
   const t0 = performance.now();
-  while (performance.now() - t0 < 2000){
+  while (performance.now() - t0 < maxMs){
     const vs = getVoices();
-    if (vs.length){
-      voicePicker.innerHTML = vs.map(v => `<option value="${v.name}">${v.name} :: ${v.lang}</option>`).join('');
-      // default to a US English voice if present
-      const def = vs.find(v=>/en[-_]?US/i.test(v.lang||"")) || vs[0];
-      if (def){
-        const opt = [...voicePicker.options].find(o=>o.value===def.name);
-        if (opt) opt.selected = true;
-      }
-      return;
-    }
+    if (vs.length) return vs;
     await new Promise(r=>setTimeout(r,100));
   }
+  return getVoices();
 }
-speechSynthesis.addEventListener?.('voiceschanged', loadVoices, {once:true});
-loadVoices();
 
-/* Play narration (no highlighting) */
+/* Prefer en-US male voices, then any English, then any voice */
+function preferVoice(vs){
+  if (FORCE_VOICE_NAME){
+    const exact = vs.find(v => v.name === FORCE_VOICE_NAME);
+    if (exact) return exact;
+  }
+  const enUS = vs.filter(v => /en[-_]?US/i.test(v.lang||""));
+  const enUSMale = enUS.find(v => /(Guy|Christopher|Eric|Ryan|David|Alex|Male|US English)/i.test(`${v.name} ${v.voiceURI||""}`));
+  if (enUSMale) return enUSMale;
+  if (enUS.length) return enUS[0];
+
+  const en = vs.filter(v => /en/i.test(v.lang||""));
+  const enMale = en.find(v => /(Guy|Christopher|Eric|Ryan|David|Alex|Male|English)/i.test(`${v.name} ${v.voiceURI||""}`));
+  if (enMale) return enMale;
+  if (en.length) return en[0];
+
+  return vs[0] || null;
+}
+
+/* Play narration (no dropdown, no highlighting) */
 async function playNarration(){
   if (!('speechSynthesis' in window)) return;
-  await loadVoices();
-  const vs = getVoices();
-  const v  = vs.find(x=>x.name===voicePicker.value) || vs[0];
-  const u  = new SpeechSynthesisUtterance(TEXT);
-  if (v) u.voice = v;
-  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
+  const vs = await waitForVoices();
+  const voice = preferVoice(vs);
+
+  const u = new SpeechSynthesisUtterance(TEXT);
+  if (voice) u.voice = voice;
+  u.rate = 0.95;   // gentle pace
+  u.pitch = 0.9;   // softer male tone
+  u.volume = 1.0;
+
   try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
 }
+
+/* Wire up buttons */
 playBtn.addEventListener('click', playNarration);
 
-/* Begin → QR */
 beginBtn.addEventListener('click', ()=>{
-  try{ speechSynthesis.cancel(); }catch{}
+  try { speechSynthesis.cancel(); } catch {}
   introScreen.style.display = 'none';
   qrScreen.style.display = 'grid';
 });
 </script>
-</body>
-</html>
-
