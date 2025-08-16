@@ -96,7 +96,7 @@ const qrScreen    = document.getElementById('qrScreen');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
 
-/* Add “Play narration” button under the tagline */
+/* ——— Add a small “Play narration” button (gesture-gated, reliable) ——— */
 (function addPlayBtn(){
   if (document.getElementById('playVoice')) return;
   const btn = document.createElement('button');
@@ -107,8 +107,9 @@ const beginBtn    = document.getElementById('begin');
   wrap.insertBefore(btn, document.getElementById('script'));
 })();
 
-/* ---------- TIGHT SYNC PATCH ---------- */
-/* 1) Visible spans (unchanged look) */
+/* ——— TIGHT SYNC PATCH (normalized tokens + calibration) ——— */
+
+/* 1) visible words (keeps your typography) */
 const scriptEl = document.getElementById('script');
 const visibleWords = TEXT.split(/\s+/);
 const spans = visibleWords.map((w, i) => {
@@ -119,17 +120,17 @@ const spans = visibleWords.map((w, i) => {
   return s;
 });
 
-/* 2) Normalized tokens for timing only */
+/* 2) normalized tokens (only for timing) */
 function normWord(w){
   return w
     .replace(/[\u2019\u2018]/g, "'")   // curly → straight apostrophes
     .replace(/[\u2014\u2013]/g, "-")  // em/en dash → hyphen
-    .replace(/\s+/g, " ")
+    .replace(/\s+/g, " ")             // collapse spaces
     .trim();
 }
 const normTokens = visibleWords.map(normWord);
 
-/* Start offsets in normalized stream (tokens joined by a single space) */
+/* start offsets for normalized tokens joined with one space */
 const tokenStarts = (() => {
   const starts = []; let pos = 0;
   for (let i = 0; i < normTokens.length; i++){
@@ -139,7 +140,7 @@ const tokenStarts = (() => {
   return starts;
 })();
 
-/* Helpers */
+/* helpers */
 let cur = -1, fallbackTimer = null, calib = 0;
 function highlight(i){
   if (i === cur) return;
@@ -157,7 +158,7 @@ function startFallback(totalMs){
   }, step);
 }
 function stopFallback(){ if (fallbackTimer){ clearInterval(fallbackTimer); fallbackTimer = null; } }
-/* Binary search: char position → token index */
+/* binary search to map char position -> token index */
 function tokenIndexAt(charPos){
   let lo = 0, hi = tokenStarts.length - 1, ans = 0;
   while (lo <= hi){
@@ -167,9 +168,8 @@ function tokenIndexAt(charPos){
   }
   return ans;
 }
-/* ---------- END SYNC PATCH ---------- */
 
-/* Speech helpers */
+/* ——— Speech helpers ——— */
 function voices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
 function pick(vs){
   if (FORCE_VOICE_NAME){ const ex = vs.find(v=>v.name===FORCE_VOICE_NAME); if (ex) return ex; }
@@ -189,27 +189,31 @@ async function waitForVoices(maxMs=2000){
   return voices();
 }
 
-/* Start narration (gesture) with tight sync */
+/* ——— Play narration on demand (gesture) ——— */
 async function playNarration(){
   if (!('speechSynthesis' in window)) return;
+
   const vs = await waitForVoices();
   const v  = pick(vs);
 
-  // reset highlight
+  // reset highlights
   spans.forEach(s=>s.classList.remove('on')); cur = -1; calib = 0;
 
   const u = new SpeechSynthesisUtterance(TEXT);
   if (v) u.voice = v;
-  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
+  u.rate = 0.95;           // softer pace
+  u.pitch = 0.9;           // softer male timbre
+  u.volume = 1.0;
 
   u.onstart = () => { highlight(0); startFallback(spans.length * 180); calib = 0; };
 
   u.onboundary = (e) => {
     if (e.name !== "word" || typeof e.charIndex !== "number") return;
 
-    // Calibrate once to align engine charIndex to our normalized stream
+    // First boundary calibrates any engine offset
     if (calib === 0) calib = e.charIndex;
 
+    // Map engine index into our normalized positions
     const adjusted = Math.max(0, e.charIndex - calib);
     const maxPos = tokenStarts[tokenStarts.length - 1] + normTokens[normTokens.length - 1].length;
     const pos = Math.min(adjusted, maxPos);
@@ -223,17 +227,18 @@ async function playNarration(){
   try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
 }
 
-/* UI wiring */
+/* ——— UI wiring ——— */
 setTimeout(()=>{ beginWrap.style.opacity = 1; }, 1000); // Begin appears regardless
-document.addEventListener('click', (e)=>{
-  if (e.target && e.target.id === 'playVoice') playNarration();
-});
+
+document.getElementById('playVoice').addEventListener('click', playNarration);
+
 beginBtn.addEventListener('click', () => {
   try{ speechSynthesis.cancel(); }catch{}
   introScreen.style.display = 'none';
-  qrScreen.style.display = 'grid';
+  qrScreen.style.display = 'grid';   // shows your “Scan / QR placeholder” screen
 });
 </script>
+
 
 
 
