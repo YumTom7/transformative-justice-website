@@ -6,224 +6,148 @@
 <title>CaseConnect – Guided Intro</title>
 <meta name="robots" content="noindex,nofollow"/>
 <style>
-  :root{ --bg:#000; --ink:#e7eef8; --dim:#5f6b7a; --blue:#2aa6f2; }
+  :root{ --bg:#000; --ink:#e7eef8; --blue:#2aa6f2; }
   html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
     font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-  .screen{ position:fixed; inset:0; display:grid; place-items:center; }
-  /* ---------- Screen 1 (intro) ---------- */
+
+  /* Both screens fill the viewport; QR is hidden by default */
+  #introScreen, #qrScreen { position: fixed; inset: 0; }
+  #introScreen { z-index: 1; }
+  #qrScreen    { display: none; z-index: 2; }
+
+  /* Shared centering container for desktop */
+  .screen{ display:grid; place-items:center; }
+
+  /* ---------- Intro screen content ---------- */
   .introWrap{ text-align:center; max-width:1100px; padding:7vh 6vw; }
-  .headline{
-    margin:0 0 8px;
-    font-weight:900;
-    font-size:clamp(36px,6vw,84px);
-    letter-spacing:.2px;
-  }
-  .headline .case { color:#fff; }
+  .headline{ margin:0 0 8px; font-weight:900; font-size:clamp(36px,6vw,84px); }
+  .headline .case{ color:#fff }
   .headline .connect{
-    background: linear-gradient(180deg, #2aa6f2 0%, #77c7ff 100%);
+    background:linear-gradient(180deg,#2aa6f2 0%,#77c7ff 100%);
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
-  .tagline{ margin:0 0 28px; font-size:clamp(16px,2.1vw,28px); opacity:.9 }
-  .script{ margin:24px auto 22px; max-width:1000px; line-height:1.6; }
-  .word{
-    font-size:clamp(22px,2.8vw,40px);
-    color: var(--dim);
-    transition: color .08s linear, text-shadow .08s linear;
+  .tagline{ margin:0 0 16px; font-size:clamp(16px,2.1vw,28px); opacity:.9 }
+
+  /* Big paragraph */
+  .script{
+    margin:24px auto 22px; max-width:1000px; line-height:1.6;
+    font-size:clamp(22px,2.8vw,40px); text-align:center;
   }
-  .word.on{
-    color:#ffffff;
-    text-shadow: 0 0 22px rgba(42,166,242,.35);
+
+  /* Begin button above orb (desktop) */
+  .beginWrap{
+    position:fixed; bottom:165px; left:50%; transform:translateX(-50%);
+    opacity:0; transition:opacity .6s ease;
   }
-  .controls{ margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap }
-  .btn{ appearance:none; border:0; border-radius:22px; padding:12px 20px; font-weight:800; cursor:pointer; }
-  .btn.primary{ background:#ffb347; color:#000; }
-  .btn.ghost{ background:transparent; color:#9ed0ff; border:1px solid rgba(255,255,255,.25) }
-  .hidden{ display:none !important; }
+  .beginBtn{
+    appearance:none; border:0; border-radius:22px; padding:12px 20px; font-weight:800;
+    background:#ffb347; color:#000; cursor:pointer;
+  }
+
+  /* Orb (desktop) */
   .orb{
     position:fixed; bottom:34px; left:50%; transform:translateX(-50%);
     width:78px; height:78px; border-radius:50%;
-    background: radial-gradient(circle, #6db5f2, #1f4ba0);
+    background:radial-gradient(circle,#6db5f2,#1f4ba0);
     box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
     animation:p 2s infinite; opacity:.9;
   }
-  @keyframes p { 0%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.12)} 100%{transform:translateX(-50%) scale(1)} }
-  #voicePicker{ display:none; background:rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.25);
-    border-radius:10px; padding:10px 12px; }
+  @keyframes p{
+    0%{transform:translateX(-50%) scale(1)}
+    50%{transform:translateX(-50%) scale(1.12)}
+    100%{transform:translateX(-50%) scale(1)}
+  }
+  @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
 
-  /* ---------- Screen 2 (QR) ---------- */
-  .qrScreen{ display:none; }
-  .qrCard{ text-align:center; padding:34px 30px; border:1px solid rgba(255,255,255,.18);
-    border-radius:18px; background:rgba(255,255,255,.04); box-shadow:0 12px 44px rgba(0,0,0,.45); }
+  /* ---------- QR screen (overlay) ---------- */
+  #qrScreen{ background: rgba(0,0,0,0.85); display:none; place-items:center; }
+  .qrCard{
+    text-align:center; padding:34px 30px; border:1px solid rgba(255,255,255,.18);
+    border-radius:18px; background:rgba(255,255,255,.04); box-shadow:0 12px 44px rgba(0,0,0,.45);
+  }
   .qrTitle{ margin:0 0 12px; font-size:clamp(26px,3.5vw,42px); font-weight:900; color:#cfe9ff }
-  #qrcode{ width:260px; height:260px; margin: 12px auto; }
-  .link{ display:block; margin-top:10px; color:#2aa6f2; word-break:break-all; font-size:clamp(12px,1.7vw,14px); }
-  @media (prefers-reduced-motion: reduce){ .orb{animation:none} .word{transition:none} }
+  #qrBox{
+    width:min(300px,65vmin); height:min(300px,65vmin); margin:12px auto; display:grid; place-items:center;
+    border-radius:16px; background:rgba(255,255,255,.06); border:1px dashed rgba(255,255,255,.25); color:#9ed0ff;
+  }
+
+  /* ---------- Mobile: scroll layout; button + orb under text ---------- */
+  @media (max-width: 600px) {
+    /* Make intro screen scrollable and column-based */
+    #introScreen{
+      position: relative;         /* release from fixed to allow scroll */
+      display: block;
+      min-height: 100dvh;
+      padding: 5vh 6vw 12vh;
+      text-align: center;
+      z-index: 1;
+    }
+    .screen{ display:block; }     /* break out of grid centering */
+    .introWrap{ padding: 4vh 0 0; }
+    .script{ text-align:center; }
+
+    .beginWrap{
+      position: static; bottom:auto; left:auto; transform:none;
+      width: 100%;
+      margin: 20px auto 10px;
+      display:flex; justify-content:center; align-items:center;
+      opacity:1;                    /* fade not necessary on mobile */
+    }
+    .beginBtn{
+      display:inline-flex; align-items:center; justify-content:center; margin:0;
+    }
+
+    .orb{
+      position: static; left:auto; transform:none;
+      width:68px; height:68px; display:block; margin:16px auto 28px;
+    }
+  }
 </style>
 </head>
 <body>
 
 <!-- Screen 1 -->
-<div class="screen introScreen">
+<div class="screen" id="introScreen">
   <div class="introWrap">
     <h1 class="headline">
       <span class="case">Welcome to </span><span class="connect">CaseConnect</span>
     </h1>
     <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
 
-    <div class="controls" id="audioControls">
-      <button id="tapToStart" class="btn ghost hidden">Tap to enable audio</button>
-      <select id="voicePicker" aria-label="Choose voice"></select>
-    </div>
-
-    <div class="script" id="script"></div>
-
-    <div class="controls hidden" id="nextControls">
-      <button id="begin" class="btn primary">Begin</button>
-      <button id="replay" class="btn ghost">Replay</button>
+    <div class="script" id="script">
+      Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once.
+      I’m here to support you. To begin, please scan the code so I can better understand your needs.
     </div>
   </div>
+
+  <div class="beginWrap" id="beginWrap"><button class="beginBtn" id="begin">Begin</button></div>
   <div class="orb" aria-hidden="true"></div>
 </div>
 
-<!-- Screen 2: QR -->
-<div class="screen qrScreen" id="qrScreen">
+<!-- Screen 2 (QR placeholder overlay) -->
+<div class="screen" id="qrScreen">
   <div class="qrCard">
     <h2 class="qrTitle">Scan</h2>
-    <div id="qrcode" role="img" aria-label="QR code"></div>
-    <a id="fallback" class="link" href="#" rel="nofollow">Or tap to open the form</a>
+    <div id="qrBox">Embed your QR code here</div>
   </div>
 </div>
 
-<!-- QR lib -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
 <script>
-/* ====== CONFIG ====== */
-const FORM_URL = "https://docs.google.com/forms/d/e/FORM_ID/viewform"; // <-- replace
-const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
-const FORCE_VOICE_NAME = ""; // set an exact voice name to force (e.g. "Google UK English Male")
-const MALE_PATS = [/Google UK English Male/i,/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
-/* ===================== */
+/* Minimal: show Begin after short delay (desktop), then swap screens on click */
+const beginWrap   = document.getElementById('beginWrap');
+const beginBtn    = document.getElementById('begin');
+const introScreen = document.getElementById('introScreen');
+const qrScreen    = document.getElementById('qrScreen');
 
-/* Build word spans (dim until spoken) */
-const scriptEl = document.getElementById('script');
-const words = TEXT.split(/\s+/);
-const wordSpans = words.map((w,i)=>{
-  const s=document.createElement('span');
-  s.className='word';
-  s.textContent = w + (i<words.length-1?' ':'');
-  scriptEl.appendChild(s);
-  return s;
-});
-
-/* Map charIndex -> word index for precise highlighting */
-const wordStartIdx = (()=>{ // build char offsets including spaces
-  let arr=[], idx=0;
-  words.forEach((w,i)=>{ arr.push(idx); idx += w.length + (i<words.length-1?1:0); });
-  return arr;
-})();
-
-/* Highlight helpers */
-let curWord = -1, fallbackTimer=null;
-function setWord(i){
-  if (i===curWord) return;
-  if (curWord>=0 && wordSpans[curWord]) wordSpans[curWord].classList.remove('on');
-  curWord = Math.max(0, Math.min(i, wordSpans.length-1));
-  wordSpans[curWord].classList.add('on');
-}
-function startFallback(durationMs){
-  stopFallback();
-  const step = Math.max(120, durationMs / words.length);
-  let i=0; setWord(0);
-  fallbackTimer = setInterval(()=>{ i++; if(i>=words.length){ stopFallback(); return; } setWord(i); }, step);
-}
-function stopFallback(){ if (fallbackTimer){ clearInterval(fallbackTimer); fallbackTimer=null; }}
-
-/* Voice selection */
-const picker = document.getElementById('voicePicker');
-let selectedVoice = null;
-function getVoices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
-function pickVoice(vs){
-  if (FORCE_VOICE_NAME){ const exact = vs.find(v=>v.name===FORCE_VOICE_NAME); if (exact) return exact; }
-  for (const rx of MALE_PATS){
-    const hit = vs.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
-    if (hit) return hit;
-  }
-  return vs.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
-      || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
-}
-async function ensureVoices(){
-  await new Promise(res=>{
-    const vs=getVoices(); if (vs.length) return res();
-    speechSynthesis.addEventListener('voiceschanged', res, {once:true});
-  });
-  const vs = getVoices();
-  if (!selectedVoice) selectedVoice = pickVoice(vs);
-  if (vs.length){
-    picker.style.display='inline-block';
-    picker.innerHTML = vs.map(v=>`<option ${selectedVoice&&selectedVoice.name===v.name?'selected':''}>${v.name} :: ${v.lang}</option>`).join('');
-    picker.onchange=()=>{ const [name]=picker.value.split(' :: '); selectedVoice = vs.find(v=>v.name===name) || selectedVoice; };
-  }
+/* Desktop fade-in for Begin; mobile override shows it immediately */
+if (window.matchMedia('(max-width: 600px)').matches === false) {
+  setTimeout(()=>{ beginWrap.style.opacity = 1; }, 900);
 }
 
-/* Speak + sync */
-let speaking=false;
-async function speakSynced(autoStart=false){
-  if (!('speechSynthesis' in window)) return false;
-  await ensureVoices();
-
-  // reset
-  wordSpans.forEach(w=>w.classList.remove('on')); curWord=-1;
-
-  const u = new SpeechSynthesisUtterance(TEXT);
-  if (selectedVoice) u.voice = selectedVoice;
-  u.rate = 0.98; u.pitch = 0.9; u.volume = 1.0;
-
-  let started = false;
-  u.onstart = ()=>{ speaking=true; started=true; setWord(0); /* fallback timing: ~180ms per word as baseline */ startFallback(words.length*180); };
-  u.onend   = ()=>{ speaking=false; stopFallback(); document.getElementById('nextControls').classList.remove('hidden'); };
-
-  u.onboundary = (e)=>{
-    if (e.name==="word" && typeof e.charIndex === "number"){
-      // find nearest word by charIndex
-      const i = wordStartIdx.findIndex((start, idx)=> e.charIndex >= start && (idx===wordStartIdx.length-1 || e.charIndex < wordStartIdx[idx+1]));
-      if (i>=0) setWord(i);
-    }
-  };
-
-  speechSynthesis.cancel();
-  try { speechSynthesis.speak(u); return true; }
-  catch(e){ if(!autoStart) console.log(e); return false; }
-}
-
-/* Try to auto-start on load; if blocked (mobile), show "Tap to enable audio" */
-const tapBtn = document.getElementById('tapToStart');
-const audioControls = document.getElementById('audioControls');
-(async () => {
-  const ok = await speakSynced(true);
-  if (!ok){ // show tap-to-enable
-    tapBtn.classList.remove('hidden');
-  }
-})();
-tapBtn.addEventListener('click', async ()=>{
-  await speakSynced();
-  tapBtn.classList.add('hidden');
-});
-
-/* Replay */
-document.getElementById('replay').addEventListener('click', ()=> speakSynced());
-
-/* Begin → QR screen */
-document.getElementById('begin').addEventListener('click', ()=>{
-  try{ if (speaking) speechSynthesis.cancel(); }catch{}
-  document.querySelector('.introScreen').style.display='none';
-  const qrS = document.getElementById('qrScreen'); qrS.style.display='grid';
-
-  const tracking = location.search || "";
-  const formHref = FORM_URL + tracking;
-  new QRCode(document.getElementById("qrcode"), { text: formHref, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.H });
-  document.getElementById('fallback').href = formHref;
+beginBtn.addEventListener('click', () => {
+  introScreen.style.display = 'none';
+  qrScreen.style.display = 'grid';     // show QR overlay, centered
 });
 </script>
 </body>
 </html>
-
