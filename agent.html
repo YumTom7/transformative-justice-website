@@ -84,98 +84,88 @@
 </div>
 
 <script>
-/* ====== CONFIG ====== */
 const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
-const FORCE_VOICE_NAME = ""; // e.g. "Google US English" or "Google UK English Male"
+const FORCE_VOICE_NAME = ""; // set to an exact voice if you want, e.g. "Google UK English Male"
 const MALE_PATS = [/Google UK English Male/i,/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
-/* ===================== */
 
+// --- refs
 const introScreen = document.getElementById('introScreen');
 const qrScreen    = document.getElementById('qrScreen');
-const tapBtn      = document.getElementById('tapToStart');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
 
-/* 1) Build the words (keeps your look) */
+// Add a small “Play narration” button under the tagline (replicates the working gesture flow)
+(function addPlayBtn(){
+  const btn = document.createElement('button');
+  btn.id = 'playVoice';
+  btn.textContent = '🔊 Play narration';
+  btn.style.cssText = 'appearance:none;border:0;border-radius:18px;padding:10px 14px;margin-top:6px;background:transparent;color:#9ed0ff;border:1px solid rgba(255,255,255,.25);cursor:pointer;';
+  const wrap = document.querySelector('.introWrap');
+  wrap.insertBefore(btn, document.getElementById('script'));
+})();
+
+// Build dimmed words (keeps your styling)
 const scriptEl = document.getElementById('script');
 const words = TEXT.split(/\s+/);
-const spans = words.map((w,i)=> {
-  const s = document.createElement('span');
-  s.className = 'word';
-  s.textContent = w + (i<words.length-1 ? ' ' : '');
-  scriptEl.appendChild(s);
-  return s;
-});
+const spans = words.map((w,i)=>{ const s=document.createElement('span'); s.className='word'; s.textContent=w+(i<words.length-1?' ':''); scriptEl.appendChild(s); return s; });
 const starts = (()=>{ let a=[],i=0; words.forEach((w,k)=>{a.push(i); i+=w.length+(k<words.length-1?1:0)}); return a; })();
 
+// Highlight helpers
 let cur=-1, timer=null;
 function hi(n){ if(cur>=0&&spans[cur]) spans[cur].classList.remove('on'); cur=n; if(spans[cur]) spans[cur].classList.add('on'); }
 function startFallback(ms){ stopFallback(); const step=Math.max(120, ms/words.length); let i=0; hi(0); timer=setInterval(()=>{ i++; if(i>=words.length){stopFallback();return;} hi(i); }, step); }
-function stopFallback(){ if(timer){ clearInterval(timer); timer=null; } }
+function stopFallback(){ if(timer){ clearInterval(timer); timer=null; }}
 
-/* 2) Voice helpers */
+// Speech helpers (robust)
 function voices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
 function pick(vs){
   if(FORCE_VOICE_NAME){ const ex=vs.find(v=>v.name===FORCE_VOICE_NAME); if(ex) return ex; }
   for(const rx of MALE_PATS){ const hit=vs.find(v=>rx.test(`${v.name} ${v.voiceURI||""}`)&&/en/i.test(v.lang||"")); if(hit) return hit; }
   return vs.find(v=>/en/i.test(v.lang||"")&&/male/i.test(`${v.name} ${v.voiceURI||""}`)) || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
 }
-async function ensureVoices(){
-  await new Promise(res=>{
-    const vs=voices(); if(vs.length) return res();
-    speechSynthesis.addEventListener('voiceschanged', res, {once:true});
-  });
+async function waitForVoices(maxMs=2000){
+  const t0=performance.now();
+  while(performance.now()-t0<maxMs){ const vs=voices(); if(vs.length) return vs; await new Promise(r=>setTimeout(r,100)); }
   return voices();
 }
 
-/* 3) Speak + sync (returns true if it actually started) */
-async function speakSync(){
-  if(!('speechSynthesis' in window)) return false;
-  await ensureVoices();
+// Start narration on demand (gesture) – this is the behavior that worked before
+async function playNarration(){
+  if(!('speechSynthesis' in window)) return;
+  const vs = await waitForVoices();
+  const v  = pick(vs);
+
+  // reset highlights
   spans.forEach(s=>s.classList.remove('on')); cur=-1;
 
-  const u=new SpeechSynthesisUtterance(TEXT);
-  const v=pick(voices()); if(v) u.voice=v;
+  const u = new SpeechSynthesisUtterance(TEXT);
+  if(v) u.voice=v;
   u.rate=0.95; u.pitch=0.9; u.volume=1.0;
 
-  u.onstart=()=>{ hi(0); startFallback(words.length*190); };
-  u.onend=()=>{ stopFallback(); };
-  u.onboundary=e=>{
+  u.onstart   = ()=>{ hi(0); startFallback(words.length*190); };
+  u.onboundary= e=>{
     if(e.name==="word" && typeof e.charIndex==="number"){
       const i = starts.findIndex((st,idx)=> e.charIndex>=st && (idx===starts.length-1 || e.charIndex<starts[idx+1]));
       if(i>=0) hi(i);
     }
   };
+  u.onend     = ()=>{ stopFallback(); };
 
-  speechSynthesis.cancel();
-  try { speechSynthesis.speak(u); return true; }
-  catch { return false; }
+  try{ speechSynthesis.cancel(); speechSynthesis.speak(u); }catch{}
 }
 
-/* 4) Boot: try to auto-start voice, but ALWAYS show Begin after 1s */
-(async ()=>{
-  // show Begin no matter what (so you're never blocked)
-  setTimeout(()=>{ document.body.classList.add('showBegin'); beginWrap.style.opacity=1; }, 1000);
+// Show Begin after 1s (independent of speech) so the flow never blocks
+setTimeout(()=>{ beginWrap.style.opacity=1; }, 1000);
 
-  const ok = await speakSync();
-  if(!ok){
-    // If voice blocked (mobile), show a small prompt to enable audio
-    tapBtn.style.display='inline-block';
-  }
-})();
-
-tapBtn.addEventListener('click', async ()=>{
-  tapBtn.style.display='none';
-  await speakSync();
-});
-
-/* 5) Begin → show Scan screen (QR placeholder for now) */
+// Button actions
+document.getElementById('playVoice').addEventListener('click', playNarration);
 beginBtn.addEventListener('click', ()=>{
   try{ speechSynthesis.cancel(); }catch{}
   introScreen.style.display='none';
   qrScreen.style.display='grid';
 });
 </script>
+
 
 </body>
 </html>
