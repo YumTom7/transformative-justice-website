@@ -1,240 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Case Connector – Agent</title>
-<meta name="robots" content="noindex,nofollow" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>CaseConnect – Guided Intro</title>
+<meta name="robots" content="noindex,nofollow"/>
 <style>
-  :root{ --bg:#071c2b; --ink:#d9ecff; --fade:1900ms;
-         /* tweak these 2 numbers to line the mouth up with your photo */
-         --mouth-x:50%; --mouth-y:62%;
-  }
+  :root{ --bg:#000; --ink:#e7eef8; --dim:#5f6b7a; --blue:#2aa6f2; }
   html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
     font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-  .stage{ position:relative; height:100%; overflow:hidden; }
+  .screen{ position:fixed; inset:0; display:grid; place-items:center; }
+  /* ---------- Screen 1 (intro) ---------- */
+  .introWrap{ text-align:center; max-width:1100px; padding:7vh 6vw; }
+  .headline{
+    margin:0 0 8px;
+    font-weight:900;
+    font-size:clamp(36px,6vw,84px);
+    letter-spacing:.2px;
+  }
+  .headline .case { color:#fff; }
+  .headline .connect{
+    background: linear-gradient(180deg, #2aa6f2 0%, #77c7ff 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tagline{ margin:0 0 28px; font-size:clamp(16px,2.1vw,28px); opacity:.9 }
+  .script{ margin:24px auto 22px; max-width:1000px; line-height:1.6; }
+  .word{
+    font-size:clamp(22px,2.8vw,40px);
+    color: var(--dim);
+    transition: color .08s linear, text-shadow .08s linear;
+  }
+  .word.on{
+    color:#ffffff;
+    text-shadow: 0 0 22px rgba(42,166,242,.35);
+  }
+  .controls{ margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap }
+  .btn{ appearance:none; border:0; border-radius:22px; padding:12px 20px; font-weight:800; cursor:pointer; }
+  .btn.primary{ background:#ffb347; color:#000; }
+  .btn.ghost{ background:transparent; color:#9ed0ff; border:1px solid rgba(255,255,255,.25) }
+  .hidden{ display:none !important; }
+  .orb{
+    position:fixed; bottom:34px; left:50%; transform:translateX(-50%);
+    width:78px; height:78px; border-radius:50%;
+    background: radial-gradient(circle, #6db5f2, #1f4ba0);
+    box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
+    animation:p 2s infinite; opacity:.9;
+  }
+  @keyframes p { 0%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.12)} 100%{transform:translateX(-50%) scale(1)} }
+  #voicePicker{ display:none; background:rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:10px; padding:10px 12px; }
 
-  /* Particle dots */
-  #dots{ position:absolute; inset:0; display:block; }
-
-  /* Image reveal */
-  .agent{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
-  .face{ width:min(86vmin,720px); max-width:96%;
-         opacity:0; filter: blur(16px) saturate(1.1) drop-shadow(0 0 26px rgba(74,196,255,.28));
-         transition: opacity var(--fade) ease, filter var(--fade) ease; }
-  .started .face{ opacity:1; filter: blur(0); }
-
-  /* Mouth overlay (SVG) – positioned over the face using --mouth-x/--mouth-y */
-  .mouthWrap{ position:absolute; left:var(--mouth-x); top:var(--mouth-y);
-              transform:translate(-50%,-50%); width:min(86vmin,720px); pointer-events:none; opacity:0;
-              transition: opacity 600ms ease; }
-  .started .mouthWrap{ opacity:1; }
-  svg{ width:100%; height:auto; }
-  #mouth { fill:#72d4ff4d; stroke:#c7ecff; stroke-width:2.5;
-           filter:drop-shadow(0 0 10px rgba(111,210,255,.6));
-           transform-origin:50% 50%; transition: transform 110ms ease; }
-  /* viseme-ish shapes controlled by data-shape attr */
-  #mouth[data-shape="closed"] { transform: scaleX(1.0) scaleY(0.25); }
-  #mouth[data-shape="AA"]     { transform: scaleX(1.0) scaleY(2.0);  }  /* ah */
-  #mouth[data-shape="O"]      { transform: scaleX(0.7) scaleY(1.4);  }  /* oh */
-  #mouth[data-shape="E"]      { transform: scaleX(1.7) scaleY(0.55); }  /* ee */
-  #mouth.pulse { animation: pulse 150ms ease-in-out; }
-  @keyframes pulse{ 0%{transform:translateZ(0) scale(1,1)} 50%{transform:translateZ(0) scale(1.02,1.12)} 100%{transform:translateZ(0) scale(1,1)} }
-
-  /* Begin gate (needed for audio gesture on mobile) */
-  .gate{ position:absolute; inset:0; display:grid; place-items:center;
-         background:rgba(7,28,43,.55); backdrop-filter:blur(2px); transition:opacity .35s; }
-  .gate.hidden{ opacity:0; pointer-events:none; }
-  .gate button{ appearance:none; border:0; border-radius:14px; padding:14px 20px; font-weight:700;
-                background:#3aa7ff; color:#071c2b; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.35); }
-
-  /* Optional voice picker (appears top-right) */
-  #voicePicker{ position:absolute; top:10px; right:10px; background:rgba(0,0,0,.35); color:#fff;
-                border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:6px 8px; display:none; }
-
-  @media (prefers-reduced-motion: reduce){ .face{transition:none} }
+  /* ---------- Screen 2 (QR) ---------- */
+  .qrScreen{ display:none; }
+  .qrCard{ text-align:center; padding:34px 30px; border:1px solid rgba(255,255,255,.18);
+    border-radius:18px; background:rgba(255,255,255,.04); box-shadow:0 12px 44px rgba(0,0,0,.45); }
+  .qrTitle{ margin:0 0 12px; font-size:clamp(26px,3.5vw,42px); font-weight:900; color:#cfe9ff }
+  #qrcode{ width:260px; height:260px; margin: 12px auto; }
+  .link{ display:block; margin-top:10px; color:#2aa6f2; word-break:break-all; font-size:clamp(12px,1.7vw,14px); }
+  @media (prefers-reduced-motion: reduce){ .orb{animation:none} .word{transition:none} }
 </style>
 </head>
 <body>
-<select id="voicePicker" aria-label="Choose voice"></select>
 
-<div class="stage" id="stage">
-  <canvas id="dots" aria-hidden="true"></canvas>
+<!-- Screen 1 -->
+<div class="screen introScreen">
+  <div class="introWrap">
+    <h1 class="headline">
+      <span class="case">Welcome to </span><span class="connect">CaseConnect</span>
+    </h1>
+    <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
 
-  <div class="agent">
-    <img id="face" class="face" src="assets/agent.jpg" alt="Agent face" />
-    <div class="mouthWrap" aria-hidden="true">
-      <!-- 1000x1000 viewBox makes positioning simple; mouth ellipse sits at center -->
-      <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
-        <g transform="translate(500,500)">
-          <ellipse id="mouth" rx="90" ry="20" data-shape="closed"></ellipse>
-        </g>
-      </svg>
+    <div class="controls" id="audioControls">
+      <button id="tapToStart" class="btn ghost hidden">Tap to enable audio</button>
+      <select id="voicePicker" aria-label="Choose voice"></select>
+    </div>
+
+    <div class="script" id="script"></div>
+
+    <div class="controls hidden" id="nextControls">
+      <button id="begin" class="btn primary">Begin</button>
+      <button id="replay" class="btn ghost">Replay</button>
     </div>
   </div>
+  <div class="orb" aria-hidden="true"></div>
+</div>
 
-  <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Begin">
-    <button id="begin">Tap to begin</button>
+<!-- Screen 2: QR -->
+<div class="screen qrScreen" id="qrScreen">
+  <div class="qrCard">
+    <h2 class="qrTitle">Scan</h2>
+    <div id="qrcode" role="img" aria-label="QR code"></div>
+    <a id="fallback" class="link" href="#" rel="nofollow">Or tap to open the form</a>
   </div>
 </div>
 
+<!-- QR lib -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
 <script>
-/*** ======= CONFIG ======= ***/
-const SCRIPT_TEXT =
-  "Hi, welcome to Case Connector. I am here to serve. I know this isn’t an easy moment, and you may be experiencing mixed feelings. I am here to help. To do that, I need to get to know you better. Please scan the code to get started.";
+/* ====== CONFIG ====== */
+const FORM_URL = "https://docs.google.com/forms/d/e/FORM_ID/viewform"; // <-- replace
+const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
+const FORCE_VOICE_NAME = ""; // set an exact voice name to force (e.g. "Google UK English Male")
+const MALE_PATS = [/Google UK English Male/i,/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
+/* ===================== */
 
-// If you know the exact voice name on your device, set it here to force it.
-// Examples: "Google UK English Male", "Microsoft Guy Online (Natural) - English (United States)", "Alex"
-const FORCE_VOICE_NAME = "";
-
-// Prefer male voices by these patterns if FORCE_VOICE_NAME isn't set:
-const MALE_PATTERNS = [
-  /Google UK English Male/i, /Google US English/i, /Microsoft (Guy|Christopher|Eric|Ryan|Steffan)/i,
-  /\bAlex\b/i, /\bDaniel\b/i, /\bGeorge\b/i, /\bMale\b/i
-];
-/*** ======================= ***/
-
-/* ---------- Particle field ---------- */
-const canvas = document.getElementById('dots'), ctx = canvas.getContext('2d');
-let W,H, dots=[], converge=false;
-function size(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
-addEventListener('resize', size); size();
-function initDots(n=Math.min(1000, Math.floor((W*H)/4500))){
-  dots = Array.from({length:n}, () => ({
-    x: Math.random()*W, y: Math.random()*H,
-    r: Math.random()*1.8+0.5,
-    vx: (Math.random()*2-1)*0.22, vy: (Math.random()*2-1)*0.22
-  }));
-}
-initDots();
-function tick(){
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#071c2b';
-  ctx.fillRect(0,0,W,H);
-  ctx.globalAlpha = converge ? 0.13 : 1.0;
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
-  for(const d of dots){
-    d.x+=d.vx; d.y+=d.vy;
-    if(d.x<0||d.x>W) d.vx*=-1;
-    if(d.y<0||d.y>H) d.vy*=-1;
-    ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  requestAnimationFrame(tick);
-}
-tick();
-
-/* ---------- UI ---------- */
-const stage = document.getElementById('stage');
-const gate  = document.getElementById('gate');
-const face  = document.getElementById('face');
-const mouth = document.getElementById('mouth');
-const picker = document.getElementById('voicePicker');
-
-function imgReadyOrTimeout(img, ms=900){
-  if (img.complete && img.naturalWidth>0) return Promise.resolve();
-  return new Promise(res=>{
-    const done=()=>{cleanup();res();};
-    const t=setTimeout(done, ms);
-    const onl=()=>done(), one=()=>done();
-    function cleanup(){clearTimeout(t); img.removeEventListener('load',onl); img.removeEventListener('error',one);}
-    img.addEventListener('load',onl,{once:true}); img.addEventListener('error',one,{once:true});
-  });
-}
-
-document.getElementById('begin').addEventListener('click', async ()=>{
-  await imgReadyOrTimeout(face);     // don’t block forever if the image is missing
-  converge = true;                    // dim dots → reveal face
-  stage.classList.add('started');
-  gate.classList.add('hidden');
-  await speakWithMouth(SCRIPT_TEXT).catch(()=>{});
+/* Build word spans (dim until spoken) */
+const scriptEl = document.getElementById('script');
+const words = TEXT.split(/\s+/);
+const wordSpans = words.map((w,i)=>{
+  const s=document.createElement('span');
+  s.className='word';
+  s.textContent = w + (i<words.length-1?' ':'');
+  scriptEl.appendChild(s);
+  return s;
 });
 
-/* ---------- Speech + lip motion ---------- */
+/* Map charIndex -> word index for precise highlighting */
+const wordStartIdx = (()=>{ // build char offsets including spaces
+  let arr=[], idx=0;
+  words.forEach((w,i)=>{ arr.push(idx); idx += w.length + (i<words.length-1?1:0); });
+  return arr;
+})();
+
+/* Highlight helpers */
+let curWord = -1, fallbackTimer=null;
+function setWord(i){
+  if (i===curWord) return;
+  if (curWord>=0 && wordSpans[curWord]) wordSpans[curWord].classList.remove('on');
+  curWord = Math.max(0, Math.min(i, wordSpans.length-1));
+  wordSpans[curWord].classList.add('on');
+}
+function startFallback(durationMs){
+  stopFallback();
+  const step = Math.max(120, durationMs / words.length);
+  let i=0; setWord(0);
+  fallbackTimer = setInterval(()=>{ i++; if(i>=words.length){ stopFallback(); return; } setWord(i); }, step);
+}
+function stopFallback(){ if (fallbackTimer){ clearInterval(fallbackTimer); fallbackTimer=null; }}
+
+/* Voice selection */
+const picker = document.getElementById('voicePicker');
 let selectedVoice = null;
-let fallbackPulseTimer = null;
-
-function listVoices(){ try { return speechSynthesis.getVoices() || []; } catch { return []; } }
-
-function pickVoice(voices){
-  if (FORCE_VOICE_NAME){
-    const exact = voices.find(v => v.name === FORCE_VOICE_NAME);
-    if (exact) return exact;
-  }
-  for (const rx of MALE_PATTERNS){
-    const hit = voices.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
+function getVoices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
+function pickVoice(vs){
+  if (FORCE_VOICE_NAME){ const exact = vs.find(v=>v.name===FORCE_VOICE_NAME); if (exact) return exact; }
+  for (const rx of MALE_PATS){
+    const hit = vs.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
     if (hit) return hit;
   }
-  const labeledMale = voices.find(v => /en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`));
-  if (labeledMale) return labeledMale;
-  const english = voices.find(v => /en/i.test(v.lang||""));
-  return english || voices[0] || null;
+  return vs.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
+      || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
 }
-
-function buildPicker(voices){
-  if (!voices.length) return;
-  picker.style.display = 'block'; // show small selector so you can force a male voice
-  picker.innerHTML = voices.map(v => `<option ${selectedVoice && selectedVoice.name===v.name?'selected':''}>${v.name} :: ${v.lang}</option>`).join('');
-  picker.onchange = () => {
-    const [name] = picker.value.split(' :: ');
-    const v = voices.find(v => v.name===name);
-    if (v) selectedVoice = v;
-  };
-}
-
-function setMouthShape(shape){ mouth.setAttribute('data-shape', shape); }
-function pulse(){ mouth.classList.remove('pulse'); void mouth.offsetWidth; mouth.classList.add('pulse'); }
-
-/* Guess a viseme from the current word’s vowels */
-function guessShapeForWord(word){
-  const w = (word||"").toLowerCase();
-  if (/[oou]/.test(w)) return "O";
-  if (/[ei]/.test(w))  return "E";
-  if (/[a]/.test(w))   return "AA";
-  return "AA";
-}
-
-async function speakWithMouth(text){
-  if (!('speechSynthesis' in window)) return;
-
-  // Wait for voices to load (Chrome quirk)
+async function ensureVoices(){
   await new Promise(res=>{
-    const voices = listVoices();
-    if (voices.length) return res();
+    const vs=getVoices(); if (vs.length) return res();
     speechSynthesis.addEventListener('voiceschanged', res, {once:true});
   });
-
-  const voices = listVoices();
-  if (!selectedVoice) selectedVoice = pickVoice(voices);
-  buildPicker(voices);
-
-  const utter = new SpeechSynthesisUtterance(text);
-  if (selectedVoice) utter.voice = selectedVoice;
-  // Tilt towards a male timbre even if voice is neutral
-  utter.rate = 1.0; utter.pitch = 0.9; utter.volume = 1.0;
-
-  // Continuous fallback motion (in case boundary events are sparse on some browsers)
-  function startFallback(){
-    clearInterval(fallbackPulseTimer);
-    fallbackPulseTimer = setInterval(()=>{ pulse(); }, 180);
+  const vs = getVoices();
+  if (!selectedVoice) selectedVoice = pickVoice(vs);
+  if (vs.length){
+    picker.style.display='inline-block';
+    picker.innerHTML = vs.map(v=>`<option ${selectedVoice&&selectedVoice.name===v.name?'selected':''}>${v.name} :: ${v.lang}</option>`).join('');
+    picker.onchange=()=>{ const [name]=picker.value.split(' :: '); selectedVoice = vs.find(v=>v.name===name) || selectedVoice; };
   }
-  function stopFallback(){ clearInterval(fallbackPulseTimer); fallbackPulseTimer = null; }
+}
 
-  // Word-boundary → choose shape from the actual word
-  utter.onboundary = (e)=>{
-    if (e.name === "word" && e.charIndex != null){
-      const upTo = text.slice(0, e.charIndex);
-      const words = upTo.split(/\s+/);
-      const current = text.slice(e.charIndex).split(/\s+/)[0];
-      setMouthShape(guessShapeForWord(current));
-      pulse();
+/* Speak + sync */
+let speaking=false;
+async function speakSynced(autoStart=false){
+  if (!('speechSynthesis' in window)) return false;
+  await ensureVoices();
+
+  // reset
+  wordSpans.forEach(w=>w.classList.remove('on')); curWord=-1;
+
+  const u = new SpeechSynthesisUtterance(TEXT);
+  if (selectedVoice) u.voice = selectedVoice;
+  u.rate = 0.98; u.pitch = 0.9; u.volume = 1.0;
+
+  let started = false;
+  u.onstart = ()=>{ speaking=true; started=true; setWord(0); /* fallback timing: ~180ms per word as baseline */ startFallback(words.length*180); };
+  u.onend   = ()=>{ speaking=false; stopFallback(); document.getElementById('nextControls').classList.remove('hidden'); };
+
+  u.onboundary = (e)=>{
+    if (e.name==="word" && typeof e.charIndex === "number"){
+      // find nearest word by charIndex
+      const i = wordStartIdx.findIndex((start, idx)=> e.charIndex >= start && (idx===wordStartIdx.length-1 || e.charIndex < wordStartIdx[idx+1]));
+      if (i>=0) setWord(i);
     }
   };
-  utter.onstart = ()=>{ setMouthShape("AA"); startFallback(); };
-  utter.onend   = ()=>{ stopFallback(); setMouthShape("closed"); mouth.classList.remove('pulse'); };
 
   speechSynthesis.cancel();
-  speechSynthesis.speak(utter);
+  try { speechSynthesis.speak(u); return true; }
+  catch(e){ if(!autoStart) console.log(e); return false; }
 }
+
+/* Try to auto-start on load; if blocked (mobile), show "Tap to enable audio" */
+const tapBtn = document.getElementById('tapToStart');
+const audioControls = document.getElementById('audioControls');
+(async () => {
+  const ok = await speakSynced(true);
+  if (!ok){ // show tap-to-enable
+    tapBtn.classList.remove('hidden');
+  }
+})();
+tapBtn.addEventListener('click', async ()=>{
+  await speakSynced();
+  tapBtn.classList.add('hidden');
+});
+
+/* Replay */
+document.getElementById('replay').addEventListener('click', ()=> speakSynced());
+
+/* Begin → QR screen */
+document.getElementById('begin').addEventListener('click', ()=>{
+  try{ if (speaking) speechSynthesis.cancel(); }catch{}
+  document.querySelector('.introScreen').style.display='none';
+  const qrS = document.getElementById('qrScreen'); qrS.style.display='grid';
+
+  const tracking = location.search || "";
+  const formHref = FORM_URL + tracking;
+  new QRCode(document.getElementById("qrcode"), { text: formHref, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.H });
+  document.getElementById('fallback').href = formHref;
+});
 </script>
 </body>
 </html>
+
