@@ -1,142 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Welcome Agent</title>
-<meta name="robots" content="noindex,nofollow" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>CaseConnect – The Case Connector</title>
+<meta name="robots" content="noindex,nofollow"/>
 <style>
   :root{
-    --fade-ms: 2200ms;
-    --blur-start: 12px;
+    --bg:#000; --ink:#fff;
+    --blue1:#6db5f2; --blue2:#1f4ba0;
+    --orb-size: 86vmin; /* final size when expanding */
+    --mouth-x:50%; --mouth-y:62%; /* tweak to align mouth if you later add lip overlay */
   }
-  html,body{
-    height:100%; margin:0;
-    background:#041826; color:#cfe9ff;
-    font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-  }
-  .stage{
-    position:relative; height:100%; display:grid; place-items:center; overflow:hidden;
-  }
-  /* DOT FIELD */
-  .noise{
-    position:absolute; inset:0;
-    background:
-      radial-gradient(circle at 10px 10px, rgba(255,255,255,.12) 1.5px, transparent 2px) 0 0/20px 20px,
-      radial-gradient(circle at 5px 5px, rgba(255,255,255,.04) 1px, transparent 2px) 0 0/10px 10px,
-      #071e30;
-    animation: drift 12s linear infinite;
-    filter: contrast(1.2) saturate(1.1);
-    transition: opacity var(--fade-ms) ease-in;
-  }
-  @keyframes drift{
-    from{ background-position: 0 0, 0 0; }
-    to  { background-position: 300px 200px, -200px -150px; }
-  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden;}
+  .wrap{position:relative;height:100%;display:grid;grid-template-rows:1fr auto auto;justify-items:center}
 
-  /* FACE IMAGE */
-  .face{
-    width:min(88vmin, 760px); max-width:95%;
-    opacity:0; filter: blur(var(--blur-start)) saturate(1.2) drop-shadow(0 0 18px rgba(79,196,255,.25));
-    transition: opacity var(--fade-ms) ease-in, filter var(--fade-ms) ease-in;
-    border-radius: 2px;
-  }
+  /* Intro text area (reuse style of your other page) */
+  .content{max-width:900px;padding:32px 18px 140px;text-align:center;line-height:1.65;font-size:1.2rem}
+  .line{opacity:0;transition:opacity 900ms ease;margin:10px 0}
+  .highlight-blue{color:#2aa6f2} .highlight-magenta{color:#e65c9c} .highlight-orange{color:#ffb347} .highlight-deepblue{color:#558ed5}
 
-  /* CTA OVERLAY */
-  .gate{
-    position:absolute; inset:0; display:grid; place-items:center; background:rgba(4,24,38,.6);
-    backdrop-filter: blur(2px);
-    transition: opacity 400ms ease;
+  /* Orb */
+  .orbbox{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);pointer-events:none}
+  .orb{
+    width:80px;height:80px;border-radius:50%;
+    background:radial-gradient(circle, var(--blue1), var(--blue2));
+    box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
+    animation:pulse 2s infinite; opacity:0; transition:opacity 1200ms ease;
+    will-change:transform,opacity;
   }
-  .gate button{
-    appearance:none; border:0; border-radius:10px; padding:14px 20px; font-size:16px; font-weight:600;
-    background:#3aa7ff; color:#041826; cursor:pointer;
-    box-shadow: 0 6px 18px rgba(0,0,0,.25), 0 0 0 1px rgba(255,255,255,.15) inset;
-  }
-  .gate button:focus{ outline: 2px solid #fff; outline-offset:2px; }
+  @keyframes pulse{0%{transform:translateX(0) scale(1);opacity:.9}50%{transform:translateX(0) scale(1.15);opacity:1}100%{transform:translateX(0) scale(1);opacity:.9}}
 
-  /* ACTIVE STATE: run the reveal */
-  .started .noise{ opacity:0; }
-  .started .face{ opacity:1; filter: blur(0); }
-  .gate.hidden{ opacity:0; pointer-events:none; }
+  /* CTA button */
+  .cta{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+       background:#ffb347;color:#000;border:0;border-radius:28px;padding:12px 20px;font-weight:700;cursor:pointer;
+       opacity:0;transition:opacity 900ms ease;white-space:nowrap}
+  .cta:focus{outline:2px solid #fff;outline-offset:2px}
 
-  /* Respect users who prefer reduced motion */
-  @media (prefers-reduced-motion: reduce){
-    .noise{ animation:none; }
-    .face, .noise{ transition: none; }
-  }
+  /* Dots background (canvas) */
+  #dots{position:absolute;inset:0;z-index:-1}
+
+  /* Agent image masked by expanding orb */
+  .stage{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none}
+  .face{width:min(var(--orb-size), 800px);max-width:96%;
+        opacity:0;filter:blur(16px) saturate(1.1) drop-shadow(0 0 26px rgba(74,196,255,.28));
+        transition:opacity 900ms ease, filter 900ms ease;}
+  /* Expanding mask */
+  .mask{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);width:0;height:0;border-radius:50%;
+        background:#000;clip-path:circle(0% at 50% 50%);transition:clip-path 900ms ease-in, width 0s linear 900ms, height 0s linear 900ms;
+        pointer-events:none}
+  .started .mask{width:100vw;height:100vh;clip-path:circle(140vmax at 50% calc(100% - 110px))}
+  .started .face{opacity:1;filter:blur(0)}
+  .hide-orb .orb{opacity:0}
+
+  /* Voice picker (optional) */
+  #voicePicker{position:fixed;top:10px;right:10px;display:none;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 8px}
+  @media (prefers-reduced-motion:reduce){ .line{transition:none} .orb{animation:none} .mask{transition:none} .face{transition:none} }
 </style>
 </head>
 <body>
-  <div class="stage" id="stage">
-    <!-- dots layer -->
-    <div class="noise" aria-hidden="true"></div>
+<select id="voicePicker" aria-label="Choose voice"></select>
 
-    <!-- your agent image -->
-    <img class="face" id="face" src="assets/agent.jpg" alt="Digital agent face" />
+<canvas id="dots" aria-hidden="true"></canvas>
 
-    <!-- tap-to-begin (needed for audio on mobile) -->
-    <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Begin">
-      <button id="begin">Tap to begin</button>
-    </div>
+<div class="wrap" id="wrap">
+  <div class="content" id="content"></div>
+
+  <div class="orbbox"><div class="orb" id="orb"></div></div>
+  <button class="cta" id="begin" aria-label="Begin">Tap to begin</button>
+
+  <!-- expanding mask + face -->
+  <div class="mask" id="mask" aria-hidden="true"></div>
+  <div class="stage">
+    <img id="face" class="face" src="assets/agent.jpg" alt="The Case Connector"/>
   </div>
+</div>
 
 <script>
-  // ----- CONFIG -----
-  const line = "Welcome. I’m your assistant. When you’re ready, scan the next code to continue.";
-  const voicePrefs = [/en-US/i, /female|samantha|google us english/i]; // tweak as you like
-  // -------------------
+/*** Intro lines (short, cinematic) ***/
+const LINES = [
+  [{t:"Welcome",c:"white"},{t:"to",c:"white"},{t:"CaseConnect",c:"highlight-blue"},{t:".net",c:"highlight-orange"}],
+  [{t:"I’m",c:"white"},{t:"the",c:"white"},{t:"Case",c:"highlight-blue"},{t:"Connector",c:"highlight-magenta"},{t:".",c:"white"}],
+  [{t:"This",c:"white"},{t:"may",c:"white"},{t:"be",c:"white"},{t:"a",c:"white"},{t:"difficult",c:"highlight-orange"},{t:"moment—",c:"white"},
+   {t:"you’re",c:"white"},{t:"not",c:"white"},{t:"alone.",c:"highlight-deepblue"}],
+  [{t:"When",c:"highlight-orange"},{t:"you’re",c:"highlight-orange"},{t:"ready…",c:"highlight-orange"}],
+];
 
-  const gate = document.getElementById('gate');
-  const stage = document.getElementById('stage');
-  const btn = document.getElementById('begin');
-
-  // Ensure image is loaded before animating
-  function imgReady(img){
-    return img.complete ? Promise.resolve() :
-      new Promise(res => img.addEventListener('load', res, {once:true}));
+const content = document.getElementById('content');
+function showLine(words, delayNext=1300){
+  const div = document.createElement('div'); div.className='line';
+  for(const w of words){
+    const span=document.createElement('span');
+    span.textContent = w.t+" ";
+    if(w.c && w.c!=="white") span.className=w.c;
+    div.appendChild(span);
   }
+  content.appendChild(div);
+  requestAnimationFrame(()=>div.style.opacity=1);
+  return new Promise(res=>setTimeout(res, delayNext));
+}
+(async ()=>{
+  for (const w of LINES) await showLine(w);
+  // reveal orb + button
+  document.getElementById('orb').style.opacity=1;
+  document.getElementById('begin').style.opacity=1;
+})();
 
-  btn.addEventListener('click', async () => {
-    await imgReady(document.getElementById('face'));
+/*** Particles (background) ***/
+const c=document.getElementById('dots'), x=c.getContext('2d'); let W,H,D=[];
+function size(){ W=c.width=innerWidth; H=c.height=innerHeight; }
+addEventListener('resize', size); size();
+function init(n=Math.min(900, Math.floor(W*H/5000))){
+  D = Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.6+.5,vx:(Math.random()*2-1)*.22,vy:(Math.random()*2-1)*.22}));
+}
+init();
+let dim=false;
+(function tick(){
+  x.fillStyle='#000'; x.fillRect(0,0,W,H);
+  x.globalAlpha = dim ? .15 : 1;
+  x.fillStyle='rgba(255,255,255,.12)';
+  for (const p of D){
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0||p.x>W) p.vx*=-1;
+    if(p.y<0||p.y>H) p.vy*=-1;
+    x.beginPath(); x.arc(p.x,p.y,p.r,0,Math.PI*2); x.fill();
+  }
+  x.globalAlpha = 1;
+  requestAnimationFrame(tick);
+})();
 
-    // Start visual reveal
-    stage.classList.add('started');
-    gate.classList.add('hidden');
+/*** Voice (male preference + optional picker) ***/
+const SCRIPT_TEXT =
+  "Welcome to Case Connector. This may feel like a heavy moment, and that’s okay. You’re not alone — I’m here to guide you. Please scan the code so we can begin.";
 
-    // Start speech (must be triggered by this click)
-    speak(line).catch(()=>{}); // ignore if speech blocked
+const FORCE_VOICE_NAME = ""; // set exact voice name to lock it in (e.g., "Google UK English Male")
+
+const MALE_PATTERNS = [
+  /Google UK English Male/i, /Google US English/i,
+  /Microsoft (Guy|Christopher|Eric|Ryan|Steffan)/i,
+  /\bAlex\b/i, /\bDaniel\b/i, /\bGeorge\b/i, /\bMale\b/i
+];
+
+function listVoices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
+function pickVoice(voices){
+  if (FORCE_VOICE_NAME){
+    const exact = voices.find(v=>v.name===FORCE_VOICE_NAME);
+    if (exact) return exact;
+  }
+  for (const rx of MALE_PATTERNS){
+    const hit = voices.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
+    if (hit) return hit;
+  }
+  return voices.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
+      || voices.find(v=>/en/i.test(v.lang||"")) || voices[0] || null;
+}
+async function speak(text){
+  if (!('speechSynthesis' in window)) return;
+  await new Promise(res=>{
+    const vs=listVoices(); if(vs.length) return res();
+    speechSynthesis.addEventListener('voiceschanged', res, {once:true});
   });
+  const voices = listVoices();
+  let voice = pickVoice(voices);
 
-  // Web Speech API helper
-  async function speak(text){
-    if(!('speechSynthesis' in window)) return;
-
-    // wait for voices to load in some browsers
-    const voicesReady = new Promise(res=>{
-      const onVoices = () => { speechSynthesis.getVoices(); res(); };
-      const list = speechSynthesis.getVoices();
-      if (list && list.length){ res(); } else { speechSynthesis.addEventListener('voiceschanged', onVoices, {once:true}); }
-    });
-    await voicesReady;
-
-    const utter = new SpeechSynthesisUtterance(text);
-    // pick a voice that matches preferences
-    const voices = speechSynthesis.getVoices();
-    const preferred = voices.find(v => voicePrefs.every(rx => rx.test((v.name+" "+v.lang+" "+(v.gender||"")))))
-                     || voices.find(v => /en/i.test(v.lang)) || voices[0];
-    if (preferred) utter.voice = preferred;
-
-    utter.rate = 1.03;   // 0.1 – 10
-    utter.pitch = 1.0;   // 0 – 2
-    utter.volume = 1.0;  // 0 – 1
-
-    return new Promise(res=>{
-      utter.onend = res;
-      speechSynthesis.cancel(); // stop any previous speech
-      speechSynthesis.speak(utter);
-    });
+  // Optional picker so you can force a specific male voice
+  const picker=document.getElementById('voicePicker');
+  if (voices.length){
+    picker.style.display='block';
+    picker.innerHTML = voices.map(v=>`<option ${voice&&voice.name===v.name?'selected':''}>${v.name} :: ${v.lang}</option>`).join('');
+    picker.onchange=()=>{ const [name]=picker.value.split(' :: '); voice=voices.find(v=>v.name===name) || voice; };
   }
+
+  const u = new SpeechSynthesisUtterance(text);
+  if (voice) u.voice = voice;
+  u.rate=1.0; u.pitch=0.9; u.volume=1.0; // lower pitch nudges male timbre
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+/*** Start sequence: orb expands → reveal face → speak ***/
+const beginBtn = document.getElementById('begin');
+const wrap = document.getElementById('wrap');
+const mask = document.getElementById('mask');
+const face = document.getElementById('face');
+
+function imgReadyOrTimeout(img, ms=900){
+  if (img.complete && img.naturalWidth>0) return Promise.resolve();
+  return new Promise(res=>{
+    const done=()=>{cleanup();res();};
+    const t=setTimeout(done,ms);
+    const onl=()=>done(), one=()=>done();
+    function cleanup(){clearTimeout(t); img.removeEventListener('load',onl); img.removeEventListener('error',one);}
+    img.addEventListener('load',onl,{once:true}); img.addEventListener('error',one,{once:true});
+  });
+}
+
+beginBtn.addEventListener('click', async ()=>{
+  // Dim dots + expand mask from orb location
+  dim=true;
+  wrap.classList.add('started','hide-orb');
+  await imgReadyOrTimeout(face);
+  // speak after reveal begins
+  speak(SCRIPT_TEXT).catch(()=>{});
+});
 </script>
 </body>
 </html>
