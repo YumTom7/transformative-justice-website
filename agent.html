@@ -82,72 +82,136 @@
     <div id="qrBox">Embed your QR code here</div>
   </div>
 </div>
-  <script>
+ 
+<script>
 /* ====== CONFIG ====== */
 const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
-const FORCE_VOICE_NAME = "Google US English"; // set a specific voice if you want
-const MALE_PATS = [/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
+
+/* If you want to force a voice, put the exact name here (optional)
+   e.g. "Google US English", "Microsoft Guy Online (Natural) - English (United States)", "Alex" */
+let FORCE_VOICE_NAME = "";
 /* ===================== */
 
-/* refs already in your HTML */
+/* Refs already on your page */
 const introScreen = document.getElementById('introScreen');
 const qrScreen    = document.getElementById('qrScreen');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
 const scriptEl    = document.getElementById('script');
+const voicePicker = document.getElementById('voicePicker');
 
-/* Fill script as plain paragraph (no word spans) */
+/* 0) Make the paragraph plain text (no highlighting) */
 scriptEl.textContent = TEXT;
 
-/* Add “Play narration” button under the tagline */
-(function addPlayBtn(){
-  if (document.getElementById('playVoice')) return;
-  const btn = document.createElement('button');
-  btn.id = 'playVoice';
-  btn.textContent = '🔊 Play narration';
-  btn.style.cssText = 'appearance:none;border:0;border-radius:18px;padding:10px 14px;margin-top:6px;background:transparent;color:#9ed0ff;border:1px solid rgba(255,255,255,.25);cursor:pointer;';
-  const wrap = document.querySelector('.introWrap');
-  wrap.insertBefore(btn, scriptEl);
-})();
+/* 1) Position the Begin button nicely between text & orb */
+beginWrap.style.bottom = '165px';  // nudge up; tweak 155–175 if you want
 
-/* Speech helpers */
-function voices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
-function pick(vs){
-  if (FORCE_VOICE_NAME){ const ex = vs.find(v=>v.name===FORCE_VOICE_NAME); if (ex) return ex; }
-  for (const rx of MALE_PATS){
-    const hit = vs.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
-    if (hit) return hit;
+/* 2) Make the voice dropdown visible and populate it */
+voicePicker.style.display = 'inline-block';
+
+function getVoices(){ try { return speechSynthesis.getVoices() || []; } catch { return []; } }
+
+/* Bias toward US English male when auto-picking */
+function preferVoice(vs){
+  if (FORCE_VOICE_NAME){
+    const exact = vs.find(v => v.name === FORCE_VOICE_NAME);
+    if (exact) return exact;
   }
-  return vs.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
-      || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
+  // Prefer en-US male names
+  const enUS = vs.filter(v => /en[-_]?US/i.test(v.lang||""));
+  const enUSMale = enUS.find(v => /(Guy|Christopher|Eric|Ryan|Alex|Male|US English)/i.test(`${v.name} ${v.voiceURI||""}`));
+  if (enUSMale) return enUSMale;
+  if (enUS.length) return enUS[0];
+
+  // Otherwise any English
+  const en = vs.filter(v => /en/i.test(v.lang||""));
+  const enMale = en.find(v => /(Guy|Christopher|Eric|Ryan|Alex|Male|English)/i.test(`${v.name} ${v.voiceURI||""}`));
+  if (enMale) return enMale;
+  if (en.length) return en[0];
+
+  return vs[0] || null;
 }
-async function waitForVoices(maxMs=2000){
+
+let selectedVoiceName = "";  // current selection
+
+async function loadVoices(){
+  // Poll for voices (Safari can miss voiceschanged)
   const t0 = performance.now();
-  while (performance.now()-t0 < maxMs){
-    const vs = voices(); if (vs.length) return vs;
-    await new Promise(r=>setTimeout(r,100));
+  while (performance.now() - t0 < 2000){
+    const vs = getVoices();
+    if (vs.length){
+      // Fill dropdown
+      voicePicker.innerHTML = vs.map(v => {
+        const label = `${v.name} :: ${v.lang}`;
+        return `<option value="${v.name}">${label}</option>`;
+      }).join('');
+
+      // Choose default (respect FORCE_VOICE_NAME if provided)
+      const pick = preferVoice(vs);
+      selectedVoiceName = (pick && pick.name) || (vs[0] && vs[0].name) || "";
+      if (selectedVoiceName){
+        const opt = [...voicePicker.options].find(o => o.value === selectedVoiceName);
+        if (opt) opt.selected = true;
+      }
+      return;
+    }
+    await new Promise(r => setTimeout(r, 100));
   }
-  return voices();
+}
+speechSynthesis.addEventListener('voiceschanged', loadVoices, {once:true});
+loadVoices();
+
+// Update selection on change
+voicePicker.addEventListener('change', () => {
+  selectedVoiceName = voicePicker.value || selectedVoiceName;
+});
+
+/* 3) Play narration (no highlighting) */
+function pickByNameOrPrefer(vs){
+  if (selectedVoiceName){
+    const byName = vs.find(v => v.name === selectedVoiceName);
+    if (byName) return byName;
+  }
+  return preferVoice(vs);
 }
 
-/* Start narration */
 async function playNarration(){
   if (!('speechSynthesis' in window)) return;
-  const vs = await waitForVoices();
-  const v  = pick(vs);
+  // Make sure we have voices
+  await loadVoices();
+  const vs = getVoices();
+  const v  = pickByNameOrPrefer(vs);
 
   const u = new SpeechSynthesisUtterance(TEXT);
   if (v) u.voice = v;
-  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
+  u.rate = 0.95;   // softer pace
+  u.pitch = 0.9;   // softer male timbre
+  u.volume = 1.0;
 
   try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
 }
 
-/* UI wiring */
-setTimeout(()=>{ beginWrap.style.opacity = 1; }, 1000); // Begin appears regardless
-document.addEventListener('click', (e)=>{ if (e.target && e.target.id === 'playVoice') playNarration(); });
+/* 4) Add a Play Narration button (under the dropdown) */
+(function addPlayBtn(){
+  if (document.getElementById('playVoice')) return;
+  const btn = document.createElement('button');
+  btn.id = 'playVoice';
+  btn.innerHTML = '🔊&nbsp;Play narration';
+  btn.className = 'btn-ghost';
+  btn.style.cssText =
+    'appearance:none;border:0;border-radius:18px;padding:10px 14px;margin-top:10px;' +
+    'background:transparent;color:#9ed0ff;border:1px solid rgba(255,255,255,.25);cursor:pointer;';
+  // Insert just after the voicePicker
+  voicePicker.insertAdjacentElement('afterend', btn);
+  btn.addEventListener('click', playNarration);
+})();
+
+/* 5) Show Begin button after a moment (same behavior) */
+setTimeout(()=>{ beginWrap.style.opacity = 1; }, 1000);
+
+/* 6) Begin → QR placeholder */
 beginBtn.addEventListener('click', () => {
-  try{ speechSynthesis.cancel(); }catch{}
+  try { speechSynthesis.cancel(); } catch {}
   introScreen.style.display = 'none';
   qrScreen.style.display = 'grid';
 });
