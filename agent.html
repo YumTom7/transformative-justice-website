@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Welcome Agent</title>
+<meta name="robots" content="noindex,nofollow" />
+<style>
+  :root{
+    --fade-ms: 2200ms;
+    --blur-start: 12px;
+  }
+  html,body{
+    height:100%; margin:0;
+    background:#041826; color:#cfe9ff;
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+  }
+  .stage{
+    position:relative; height:100%; display:grid; place-items:center; overflow:hidden;
+  }
+  /* DOT FIELD */
+  .noise{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(circle at 10px 10px, rgba(255,255,255,.12) 1.5px, transparent 2px) 0 0/20px 20px,
+      radial-gradient(circle at 5px 5px, rgba(255,255,255,.04) 1px, transparent 2px) 0 0/10px 10px,
+      #071e30;
+    animation: drift 12s linear infinite;
+    filter: contrast(1.2) saturate(1.1);
+    transition: opacity var(--fade-ms) ease-in;
+  }
+  @keyframes drift{
+    from{ background-position: 0 0, 0 0; }
+    to  { background-position: 300px 200px, -200px -150px; }
+  }
+
+  /* FACE IMAGE */
+  .face{
+    width:min(88vmin, 760px); max-width:95%;
+    opacity:0; filter: blur(var(--blur-start)) saturate(1.2) drop-shadow(0 0 18px rgba(79,196,255,.25));
+    transition: opacity var(--fade-ms) ease-in, filter var(--fade-ms) ease-in;
+    border-radius: 2px;
+  }
+
+  /* CTA OVERLAY */
+  .gate{
+    position:absolute; inset:0; display:grid; place-items:center; background:rgba(4,24,38,.6);
+    backdrop-filter: blur(2px);
+    transition: opacity 400ms ease;
+  }
+  .gate button{
+    appearance:none; border:0; border-radius:10px; padding:14px 20px; font-size:16px; font-weight:600;
+    background:#3aa7ff; color:#041826; cursor:pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.25), 0 0 0 1px rgba(255,255,255,.15) inset;
+  }
+  .gate button:focus{ outline: 2px solid #fff; outline-offset:2px; }
+
+  /* ACTIVE STATE: run the reveal */
+  .started .noise{ opacity:0; }
+  .started .face{ opacity:1; filter: blur(0); }
+  .gate.hidden{ opacity:0; pointer-events:none; }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    .noise{ animation:none; }
+    .face, .noise{ transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <!-- dots layer -->
+    <div class="noise" aria-hidden="true"></div>
+
+    <!-- your agent image -->
+    <img class="face" id="face" src="assets/agent.jpg" alt="Digital agent face" />
+
+    <!-- tap-to-begin (needed for audio on mobile) -->
+    <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Begin">
+      <button id="begin">Tap to begin</button>
+    </div>
+  </div>
+
+<script>
+  // ----- CONFIG -----
+  const line = "Welcome. I’m your assistant. When you’re ready, scan the next code to continue.";
+  const voicePrefs = [/en-US/i, /female|samantha|google us english/i]; // tweak as you like
+  // -------------------
+
+  const gate = document.getElementById('gate');
+  const stage = document.getElementById('stage');
+  const btn = document.getElementById('begin');
+
+  // Ensure image is loaded before animating
+  function imgReady(img){
+    return img.complete ? Promise.resolve() :
+      new Promise(res => img.addEventListener('load', res, {once:true}));
+  }
+
+  btn.addEventListener('click', async () => {
+    await imgReady(document.getElementById('face'));
+
+    // Start visual reveal
+    stage.classList.add('started');
+    gate.classList.add('hidden');
+
+    // Start speech (must be triggered by this click)
+    speak(line).catch(()=>{}); // ignore if speech blocked
+  });
+
+  // Web Speech API helper
+  async function speak(text){
+    if(!('speechSynthesis' in window)) return;
+
+    // wait for voices to load in some browsers
+    const voicesReady = new Promise(res=>{
+      const onVoices = () => { speechSynthesis.getVoices(); res(); };
+      const list = speechSynthesis.getVoices();
+      if (list && list.length){ res(); } else { speechSynthesis.addEventListener('voiceschanged', onVoices, {once:true}); }
+    });
+    await voicesReady;
+
+    const utter = new SpeechSynthesisUtterance(text);
+    // pick a voice that matches preferences
+    const voices = speechSynthesis.getVoices();
+    const preferred = voices.find(v => voicePrefs.every(rx => rx.test((v.name+" "+v.lang+" "+(v.gender||"")))))
+                     || voices.find(v => /en/i.test(v.lang)) || voices[0];
+    if (preferred) utter.voice = preferred;
+
+    utter.rate = 1.03;   // 0.1 – 10
+    utter.pitch = 1.0;   // 0 – 2
+    utter.volume = 1.0;  // 0 – 1
+
+    return new Promise(res=>{
+      utter.onend = res;
+      speechSynthesis.cancel(); // stop any previous speech
+      speechSynthesis.speak(utter);
+    });
+  }
+</script>
+</body>
+</html>
