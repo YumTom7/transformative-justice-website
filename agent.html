@@ -63,10 +63,8 @@
 
   @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
 /* --- Mobile layout: center Begin + Orb under the script --- */
-@media (prefers-reduced-motion:reduce){ .orb{animation:none} }
-
-/* --- Mobile layout: center Begin + Orb under the script --- */
 @media (max-width: 600px) {
+  /* make the section a centered column */
   .screen{
     position: relative !important;
     display: flex !important;
@@ -99,6 +97,7 @@
     margin: 0;
   }
 
+  /* hard override ALL desktop orb positioning */
   .orb{
     position: static !important;
     bottom: auto !important;
@@ -107,9 +106,10 @@
     transform: none !important;
     display: block !important;
     width: 68px; height: 68px;
-    margin: 16px auto 28px !important;
+    margin: 16px auto 28px !important;   /* centers it */
   }
 }
+
    .qrScreen{
     position: relative;
     display: block;
