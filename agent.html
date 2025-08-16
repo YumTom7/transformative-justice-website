@@ -96,7 +96,7 @@ const qrScreen    = document.getElementById('qrScreen');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
 
-/* ——— Add a small “Play narration” button (gesture-gated, reliable) ——— */
+/* Add “Play narration” button under the tagline (gesture = reliable TTS) */
 (function addPlayBtn(){
   if (document.getElementById('playVoice')) return;
   const btn = document.createElement('button');
@@ -107,9 +107,8 @@ const beginBtn    = document.getElementById('begin');
   wrap.insertBefore(btn, document.getElementById('script'));
 })();
 
-/* ——— TIGHT SYNC PATCH (normalized tokens + calibration) ——— */
-
-/* 1) visible words (keeps your typography) */
+/* ---------- TIGHT SYNC (normalized tokens + calibration) ---------- */
+/* 1) Visible spans (unchanged look) */
 const scriptEl = document.getElementById('script');
 const visibleWords = TEXT.split(/\s+/);
 const spans = visibleWords.map((w, i) => {
@@ -120,17 +119,17 @@ const spans = visibleWords.map((w, i) => {
   return s;
 });
 
-/* 2) normalized tokens (only for timing) */
+/* 2) Normalized tokens for timing only */
 function normWord(w){
   return w
     .replace(/[\u2019\u2018]/g, "'")   // curly → straight apostrophes
     .replace(/[\u2014\u2013]/g, "-")  // em/en dash → hyphen
-    .replace(/\s+/g, " ")             // collapse spaces
+    .replace(/\s+/g, " ")
     .trim();
 }
 const normTokens = visibleWords.map(normWord);
 
-/* start offsets for normalized tokens joined with one space */
+/* Start offsets in normalized stream (tokens joined by single space) */
 const tokenStarts = (() => {
   const starts = []; let pos = 0;
   for (let i = 0; i < normTokens.length; i++){
@@ -140,25 +139,7 @@ const tokenStarts = (() => {
   return starts;
 })();
 
-/* helpers */
-let cur = -1, fallbackTimer = null, calib = 0;
-function highlight(i){
-  if (i === cur) return;
-  if (cur >= 0 && spans[cur]) spans[cur].classList.remove('on');
-  cur = Math.max(0, Math.min(i, spans.length - 1));
-  if (spans[cur]) spans[cur].classList.add('on');
-}
-function startFallback(totalMs){
-  stopFallback();
-  const step = Math.max(110, totalMs / spans.length);
-  let i = 0; highlight(0);
-  fallbackTimer = setInterval(() => {
-    i++; if (i >= spans.length){ stopFallback(); return; }
-    highlight(i);
-  }, step);
-}
-function stopFallback(){ if (fallbackTimer){ clearInterval(fallbackTimer); fallbackTimer = null; } }
-/* binary search to map char position -> token index */
+/* Binary search: char position → token index */
 function tokenIndexAt(charPos){
   let lo = 0, hi = tokenStarts.length - 1, ans = 0;
   while (lo <= hi){
@@ -169,7 +150,27 @@ function tokenIndexAt(charPos){
   return ans;
 }
 
-/* ——— Speech helpers ——— */
+/* Highlight + adaptive idle fallback (SURGICAL CHANGE) */
+let cur = -1, calib = 0, idleTimer = null;
+const IDLE_MS = 800; // adjust: larger = slower advance, smaller = faster
+
+function highlight(i){
+  if (i === cur) return;
+  if (cur >= 0 && spans[cur]) spans[cur].classList.remove('on');
+  cur = Math.max(0, Math.min(i, spans.length - 1));
+  if (spans[cur]) spans[cur].classList.add('on');
+}
+
+function scheduleIdle(fromIndex){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(()=>{
+    const next = Math.min(fromIndex + 1, spans.length - 1);
+    if (next !== fromIndex){ highlight(next); scheduleIdle(next); }
+  }, IDLE_MS);
+}
+/* ---------- END SYNC ---------- */
+
+/* Speech helpers */
 function voices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
 function pick(vs){
   if (FORCE_VOICE_NAME){ const ex = vs.find(v=>v.name===FORCE_VOICE_NAME); if (ex) return ex; }
@@ -189,53 +190,55 @@ async function waitForVoices(maxMs=2000){
   return voices();
 }
 
-/* ——— Play narration on demand (gesture) ——— */
+/* Start narration (gesture) with tight sync + adaptive idle */
 async function playNarration(){
   if (!('speechSynthesis' in window)) return;
-
   const vs = await waitForVoices();
   const v  = pick(vs);
 
-  // reset highlights
-  spans.forEach(s=>s.classList.remove('on')); cur = -1; calib = 0;
+  // reset
+  spans.forEach(s=>s.classList.remove('on')); cur = -1; calib = 0; clearTimeout(idleTimer);
 
   const u = new SpeechSynthesisUtterance(TEXT);
   if (v) u.voice = v;
-  u.rate = 0.95;           // softer pace
-  u.pitch = 0.9;           // softer male timbre
-  u.volume = 1.0;
+  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
 
-  u.onstart = () => { highlight(0); startFallback(spans.length * 180); calib = 0; };
+  u.onstart = () => {
+    highlight(0);
+    scheduleIdle(0);   // only nudges if no boundaries arrive
+  };
 
   u.onboundary = (e) => {
     if (e.name !== "word" || typeof e.charIndex !== "number") return;
 
-    // First boundary calibrates any engine offset
+    // Calibrate once to align engine charIndex to our normalized stream
     if (calib === 0) calib = e.charIndex;
 
-    // Map engine index into our normalized positions
     const adjusted = Math.max(0, e.charIndex - calib);
     const maxPos = tokenStarts[tokenStarts.length - 1] + normTokens[normTokens.length - 1].length;
     const pos = Math.min(adjusted, maxPos);
 
     const idx = tokenIndexAt(pos);
     highlight(idx);
+    scheduleIdle(idx); // reset idle timer from this exact word
   };
 
-  u.onend = () => { stopFallback(); };
+  u.onend = () => {
+    clearTimeout(idleTimer);
+  };
 
   try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
 }
 
-/* ——— UI wiring ——— */
+/* UI wiring */
 setTimeout(()=>{ beginWrap.style.opacity = 1; }, 1000); // Begin appears regardless
-
-document.getElementById('playVoice').addEventListener('click', playNarration);
-
+document.addEventListener('click', (e)=>{
+  if (e.target && e.target.id === 'playVoice') playNarration();
+});
 beginBtn.addEventListener('click', () => {
   try{ speechSynthesis.cancel(); }catch{}
   introScreen.style.display = 'none';
-  qrScreen.style.display = 'grid';   // shows your “Scan / QR placeholder” screen
+  qrScreen.style.display = 'grid';
 });
 </script>
 
