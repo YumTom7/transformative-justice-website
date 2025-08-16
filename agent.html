@@ -63,29 +63,35 @@
 
   @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
 /* --- Mobile layout: center Begin + Orb under the script --- */
+@media (prefers-reduced-motion:reduce){ .orb{animation:none} }
+
+/* --- Mobile layout: center Begin + Orb under the script --- */
 @media (max-width: 600px) {
   .screen{
-    position: relative;
-    display: block;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start;
     min-height: 100dvh;
     padding: 5vh 6vw 12vh;
     text-align: center;
   }
 
-  .introWrap{ padding: 4vh 0 0; }
+  .introWrap{ padding: 4vh 0 0; width: 100%; }
   .script{ text-align: center; }
 
   .beginWrap{
-    position: static;
-    bottom: auto;
-    transform: none;
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: none !important;
     width: 100%;
     margin: 20px auto 10px;
     display: flex;
     justify-content: center;
     align-items: center;
   }
-
   .beginBtn{
     display: inline-flex;
     align-items: center;
@@ -94,15 +100,17 @@
   }
 
   .orb{
-    position: static;
-    transform: none;
-    width: 68px;
-    height: 68px;
-    display: block;
-    margin: 16px auto 28px;
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    display: block !important;
+    width: 68px; height: 68px;
+    margin: 16px auto 28px !important;
   }
-
-  .qrScreen{
+}
+   .qrScreen{
     position: relative;
     display: block;
     min-height: 100dvh;
