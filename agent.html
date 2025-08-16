@@ -86,8 +86,14 @@
 <script>
 /* ====== CONFIG ====== */
 const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
-const FORCE_VOICE_NAME = ""; // e.g. "Google UK English Male"
-const MALE_PATS = [/Google UK English Male/i,/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
+// If you want an exact voice, set it here (must exist on the device). Examples:
+// "Google UK English Male", "Microsoft Guy Online (Natural) - English (United States)", "Alex"
+const FORCE_VOICE_NAME = "";
+const MALE_PATS = [
+  /Google UK English Male/i, /Google US English/i,
+  /Microsoft (Guy|Christopher|Eric|Ryan)/i,
+  /\bAlex\b/i, /\bDaniel\b/i, /\bGeorge\b/i, /\bMale\b/i
+];
 /* ===================== */
 
 /* refs already in your HTML */
@@ -95,6 +101,10 @@ const introScreen = document.getElementById('introScreen');
 const qrScreen    = document.getElementById('qrScreen');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
+const scriptEl    = document.getElementById('script');
+
+/* Show the paragraph as plain text (no word spans) */
+scriptEl.textContent = TEXT;
 
 /* Add “Play narration” button under the tagline (gesture = reliable TTS) */
 (function addPlayBtn(){
@@ -102,84 +112,28 @@ const beginBtn    = document.getElementById('begin');
   const btn = document.createElement('button');
   btn.id = 'playVoice';
   btn.textContent = '🔊 Play narration';
-  btn.style.cssText = 'appearance:none;border:0;border-radius:18px;padding:10px 14px;margin-top:6px;background:transparent;color:#9ed0ff;border:1px solid rgba(255,255,255,.25);cursor:pointer;';
+  btn.style.cssText =
+    'appearance:none;border:0;border-radius:18px;padding:10px 14px;margin-top:6px;' +
+    'background:transparent;color:#9ed0ff;border:1px solid rgba(255,255,255,.25);cursor:pointer;';
   const wrap = document.querySelector('.introWrap');
-  wrap.insertBefore(btn, document.getElementById('script'));
+  wrap.insertBefore(btn, scriptEl);
 })();
 
-/* ---------- TIGHT SYNC (normalized tokens + calibration) ---------- */
-/* 1) Visible spans (unchanged look) */
-const scriptEl = document.getElementById('script');
-const visibleWords = TEXT.split(/\s+/);
-const spans = visibleWords.map((w, i) => {
-  const s = document.createElement('span');
-  s.className = 'word';
-  s.textContent = w + (i < visibleWords.length - 1 ? ' ' : '');
-  scriptEl.appendChild(s);
-  return s;
-});
-
-/* 2) Normalized tokens for timing only */
-function normWord(w){
-  return w
-    .replace(/[\u2019\u2018]/g, "'")   // curly → straight apostrophes
-    .replace(/[\u2014\u2013]/g, "-")  // em/en dash → hyphen
-    .replace(/\s+/g, " ")
-    .trim();
-}
-const normTokens = visibleWords.map(normWord);
-
-/* Start offsets in normalized stream (tokens joined by single space) */
-const tokenStarts = (() => {
-  const starts = []; let pos = 0;
-  for (let i = 0; i < normTokens.length; i++){
-    starts.push(pos);
-    pos += normTokens[i].length + (i < normTokens.length - 1 ? 1 : 0);
-  }
-  return starts;
-})();
-
-/* Binary search: char position → token index */
-function tokenIndexAt(charPos){
-  let lo = 0, hi = tokenStarts.length - 1, ans = 0;
-  while (lo <= hi){
-    const mid = (lo + hi) >> 1;
-    if (tokenStarts[mid] <= charPos){ ans = mid; lo = mid + 1; }
-    else hi = mid - 1;
-  }
-  return ans;
-}
-
-/* Highlight + adaptive idle fallback (SURGICAL CHANGE) */
-let cur = -1, calib = 0, idleTimer = null;
-const IDLE_MS = 800; // adjust: larger = slower advance, smaller = faster
-
-function highlight(i){
-  if (i === cur) return;
-  if (cur >= 0 && spans[cur]) spans[cur].classList.remove('on');
-  cur = Math.max(0, Math.min(i, spans.length - 1));
-  if (spans[cur]) spans[cur].classList.add('on');
-}
-
-function scheduleIdle(fromIndex){
-  clearTimeout(idleTimer);
-  idleTimer = setTimeout(()=>{
-    const next = Math.min(fromIndex + 1, spans.length - 1);
-    if (next !== fromIndex){ highlight(next); scheduleIdle(next); }
-  }, IDLE_MS);
-}
-/* ---------- END SYNC ---------- */
-
-/* Speech helpers */
+/* --- Voice helpers (male-leaning) --- */
 function voices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
-function pick(vs){
-  if (FORCE_VOICE_NAME){ const ex = vs.find(v=>v.name===FORCE_VOICE_NAME); if (ex) return ex; }
+function pickVoice(vs){
+  if (FORCE_VOICE_NAME){
+    const exact = vs.find(v => v.name === FORCE_VOICE_NAME);
+    if (exact) return exact;
+  }
   for (const rx of MALE_PATS){
     const hit = vs.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
     if (hit) return hit;
   }
-  return vs.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
-      || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
+  return vs.find(v => /en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
+      || vs.find(v => /en/i.test(v.lang||""))
+      || vs[0]
+      || null;
 }
 async function waitForVoices(maxMs=2000){
   const t0 = performance.now();
@@ -190,60 +144,34 @@ async function waitForVoices(maxMs=2000){
   return voices();
 }
 
-/* Start narration (gesture) with tight sync + adaptive idle */
+/* Play narration on demand (simple—no highlighting) */
 async function playNarration(){
   if (!('speechSynthesis' in window)) return;
   const vs = await waitForVoices();
-  const v  = pick(vs);
-
-  // reset
-  spans.forEach(s=>s.classList.remove('on')); cur = -1; calib = 0; clearTimeout(idleTimer);
+  const v  = pickVoice(vs);
 
   const u = new SpeechSynthesisUtterance(TEXT);
   if (v) u.voice = v;
-  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
-
-  u.onstart = () => {
-    highlight(0);
-    scheduleIdle(0);   // only nudges if no boundaries arrive
-  };
-
-  u.onboundary = (e) => {
-    if (e.name !== "word" || typeof e.charIndex !== "number") return;
-
-    // Calibrate once to align engine charIndex to our normalized stream
-    if (calib === 0) calib = e.charIndex;
-
-    const adjusted = Math.max(0, e.charIndex - calib);
-    const maxPos = tokenStarts[tokenStarts.length - 1] + normTokens[normTokens.length - 1].length;
-    const pos = Math.min(adjusted, maxPos);
-
-    const idx = tokenIndexAt(pos);
-    highlight(idx);
-    scheduleIdle(idx); // reset idle timer from this exact word
-  };
-
-  u.onend = () => {
-    clearTimeout(idleTimer);
-  };
+  u.rate = 0.95;  // softer pace
+  u.pitch = 0.9;  // softer male timbre
+  u.volume = 1.0;
 
   try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
 }
 
 /* UI wiring */
 setTimeout(()=>{ beginWrap.style.opacity = 1; }, 1000); // Begin appears regardless
+
 document.addEventListener('click', (e)=>{
   if (e.target && e.target.id === 'playVoice') playNarration();
 });
+
 beginBtn.addEventListener('click', () => {
   try{ speechSynthesis.cancel(); }catch{}
   introScreen.style.display = 'none';
-  qrScreen.style.display = 'grid';
+  qrScreen.style.display = 'grid';   // shows your “Scan / QR placeholder” screen
 });
 </script>
-
-
-
 
 </body>
 </html>
