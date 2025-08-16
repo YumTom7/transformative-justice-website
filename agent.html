@@ -62,9 +62,7 @@
   }
 
   @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
-  /* --- Mobile layout: put Begin + Orb below the script and allow scroll --- */
-@media (max-width: 600px) {
-/* --- Mobile layout: put Begin + Orb centered below the script --- */
+/* --- Mobile layout: center Begin + Orb under the script --- */
 @media (max-width: 600px) {
   .screen{
     position: relative;
@@ -79,16 +77,20 @@
 
   .beginWrap{
     position: static;
-    transform: none;
     bottom: auto;
+    transform: none;
+    width: 100%;
     margin: 20px auto 10px;
     display: flex;
     justify-content: center;
+    align-items: center;
   }
 
   .beginBtn{
-    margin: 0 auto;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
   }
 
   .orb{
@@ -96,8 +98,8 @@
     transform: none;
     width: 68px;
     height: 68px;
-    margin: 16px auto 28px;  /* centers horizontally */
     display: block;
+    margin: 16px auto 28px;
   }
 
   .qrScreen{
@@ -107,10 +109,10 @@
     padding: 6vh 6vw;
     text-align: center;
   }
-
   .qrCard{ margin: 0 auto; max-width: 520px; }
 }
-
+</style>
+ 
 </style>
 </head>
 <body>
