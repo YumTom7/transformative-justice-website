@@ -6,176 +6,189 @@
 <title>CaseConnect – Guided Intro</title>
 <meta name="robots" content="noindex,nofollow"/>
 <style>
-  :root{ --bg:#000; --ink:#fff; --blue:#2aa6f2; }
+  :root{ --bg:#000; --ink:#e7eef8; --dim:#5f6b7a; --blue:#2aa6f2; }
   html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
-    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
   .screen{ position:fixed; inset:0; display:grid; place-items:center; }
-  /* ---------- Screen 1: Intro ---------- */
-  .intro{ padding:6vh 6vw; text-align:center; max-width:1000px; }
-  .headline{ font-size: clamp(28px, 4.5vw, 56px); font-weight: 800; letter-spacing:.2px; margin:0 0 12px; }
-  .sub{ font-size: clamp(18px, 2.2vw, 28px); line-height:1.6; margin: 6px 0 26px; opacity:.9 }
-  .script{ font-size: clamp(20px, 2.6vw, 34px); line-height:1.65; }
-  .script .word{ opacity:.12; transition:opacity .08s linear; }
-  .script .word.on{ opacity:1; }
-  .orb{ position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
-    width:72px; height:72px; border-radius:50%;
-    background: radial-gradient(circle, #6db5f2, #1f4ba0);
-    box-shadow: 0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
-    animation:p 2s infinite; opacity:.85;
-  }
-  @keyframes p { 0%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.12)} 100%{transform:translateX(-50%) scale(1)} }
-  .controls{ margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap }
-  .btn{ appearance:none; border:0; border-radius:18px; padding:12px 18px; font-weight:700; cursor:pointer; }
-  .btn.primary{ background:#ffb347; color:#000; }
-  .btn.ghost{ background:transparent; color:#9ed0ff; border:1px solid rgba(255,255,255,.25) }
-  #voicePicker{ display:none; background:rgba(255,255,255,.05); color:#fff; border:1px solid rgba(255,255,255,.25);
-    border-radius:10px; padding:10px 12px; }
-  /* ---------- Screen 2: QR ---------- */
+
+  /* ---------- Screen 1 (intro) ---------- */
+  .introWrap{ text-align:center; max-width:1100px; padding:7vh 6vw; }
+  .headline{ margin:0 0 8px; font-weight:900; font-size:clamp(36px,6vw,84px); letter-spacing:.2px; }
+  .headline .case{ color:#fff }
+  .headline .connect{ background:linear-gradient(180deg,#2aa6f2 0%,#77c7ff 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tagline{ margin:0 0 28px; font-size:clamp(16px,2.1vw,28px); opacity:.9 }
+  .script{ margin:24px auto 22px; max-width:1000px; line-height:1.6; }
+  .word{ font-size:clamp(22px,2.8vw,40px); color:var(--dim); transition:color .08s linear, text-shadow .08s linear; }
+  .word.on{ color:#ffffff; text-shadow:0 0 22px rgba(42,166,242,.35); }
+
+  /* voice/controls */
+  #tapToStart{ display:none; appearance:none; border:0; border-radius:18px;
+    padding:10px 14px; background:transparent; color:#9ed0ff;
+    border:1px solid rgba(255,255,255,.25); cursor:pointer; margin-top:6px; }
+  /* keep picker hidden unless you want it – set display:block in JS if needed */
+  #voicePicker{ display:none }
+
+  /* Begin button above orb */
+  .beginWrap{ position:fixed; bottom:120px; left:50%; transform:translateX(-50%);
+    opacity:0; transition:opacity .6s ease; }
+  .beginBtn{ appearance:none; border:0; border-radius:22px; padding:12px 20px; font-weight:800;
+    background:#ffb347; color:#000; cursor:pointer; }
+  .showBegin .beginWrap{ opacity:1 }
+
+  /* Orb */
+  .orb{ position:fixed; bottom:34px; left:50%; transform:translateX(-50%);
+    width:78px; height:78px; border-radius:50%;
+    background:radial-gradient(circle,#6db5f2,#1f4ba0);
+    box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
+    animation:p 2s infinite; opacity:.9; }
+  @keyframes p{0%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.12)}100%{transform:translateX(-50%) scale(1)}}
+
+  /* ---------- Screen 2 (QR placeholder) ---------- */
   .qrScreen{ display:none; }
-  .qrCard{ text-align:center; padding:28px 26px; border:1px solid rgba(255,255,255,.18);
-    border-radius:18px; background:rgba(255,255,255,.04); box-shadow: 0 12px 44px rgba(0,0,0,.45); }
-  .qrTitle{ margin:0 0 12px; font-size: clamp(22px, 3vw, 36px); font-weight:800; color:#cfe9ff }
-  #qrcode{ width:240px; height:240px; margin: 10px auto; }
-  .link{ display:block; margin-top:8px; color:#2aa6f2; word-break:break-all; font-size: clamp(12px,1.6vw,14px); }
-  @media (prefers-reduced-motion: reduce){ .script .word{transition:none} .orb{animation:none} }
+  .qrCard{ text-align:center; padding:34px 30px; border:1px solid rgba(255,255,255,.18);
+    border-radius:18px; background:rgba(255,255,255,.04); box-shadow:0 12px 44px rgba(0,0,0,.45); }
+  .qrTitle{ margin:0 0 12px; font-size:clamp(26px,3.5vw,42px); font-weight:900; color:#cfe9ff }
+  #qrBox{ width:min(300px,65vmin); height:min(300px,65vmin); margin:12px auto; display:grid; place-items:center;
+    border-radius:16px; background:rgba(255,255,255,.06); border:1px dashed rgba(255,255,255,.25); color:#9ed0ff; }
+
+  @media (prefers-reduced-motion:reduce){ .orb{animation:none} .word{transition:none} }
 </style>
 </head>
 <body>
 
-<!-- Screen 1: Intro -->
-<div class="screen introScreen">
-  <div class="intro">
-    <h1 class="headline">Welcome to <span style="color:var(--blue)">CaseConnect</span></h1>
-    <p class="sub">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
+<!-- Screen 1 -->
+<div class="screen introScreen" id="introScreen">
+  <div class="introWrap">
+    <h1 class="headline">
+      <span class="case">Welcome to </span><span class="connect">CaseConnect</span>
+    </h1>
+    <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
 
-    <!-- Tap-to-start needed for audio -->
-    <div class="controls" id="startControls">
-      <button id="start" class="btn primary">Tap to start</button>
-      <select id="voicePicker" aria-label="Choose voice"></select>
-    </div>
+    <button id="tapToStart">Tap to enable audio</button>
+    <select id="voicePicker" aria-label="Choose voice"></select>
 
     <div class="script" id="script"></div>
-
-    <div class="controls" id="nextControls" style="display:none">
-      <button id="begin" class="btn primary">Begin</button>
-      <button id="replay" class="btn ghost">Replay</button>
-    </div>
   </div>
+
+  <div class="beginWrap" id="beginWrap"><button class="beginBtn" id="begin">Begin</button></div>
   <div class="orb" aria-hidden="true"></div>
 </div>
 
-<!-- Screen 2: QR -->
+<!-- Screen 2 (QR placeholder) -->
 <div class="screen qrScreen" id="qrScreen">
   <div class="qrCard">
     <h2 class="qrTitle">Scan</h2>
-    <div id="qrcode" role="img" aria-label="QR code"></div>
-    <a id="fallback" class="link" href="#" rel="nofollow">Or tap to open the form</a>
+    <div id="qrBox">Embed your QR code here</div>
   </div>
 </div>
 
-<!-- QR lib -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
 <script>
 /* ====== CONFIG ====== */
-const FORM_URL = "https://docs.google.com/forms/d/e/FORM_ID/viewform"; // <-- replace
-const TEXT = "Welcome to Case Connector. This may feel like a heavy moment, and that’s okay. You’re not alone; I’m here to guide you. To begin, please scan the code so I can better understand your needs.";
-const FORCE_VOICE_NAME = ""; // set exact name to force (e.g., "Google UK English Male")
-const MALE_PATS = [/Google UK English Male/i,/Google US English/i,/Microsoft (Guy|Christopher|Eric|Ryan)/i,/\bAlex\b/i,/\bDaniel\b/i,/\bGeorge\b/i,/\bMale\b/i];
+const TEXT = "Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.";
+const FORCE_VOICE_NAME = ""; // e.g. "Google UK English Male" to lock a specific voice
+// Prefer soft male voices (add/remove names as needed)
+const MALE_PATS = [
+  /Google UK English Male/i, /Google US English/i,
+  /Microsoft (Guy|Christopher|Eric|Ryan)/i, /\bAlex\b/i, /\bDaniel\b/i, /\bGeorge\b/i, /\bMale\b/i
+];
 /* ===================== */
 
-/* Build the word spans now (so we can reveal on boundary) */
+/* Build words (keeps your large scale + dim/bright behavior) */
 const scriptEl = document.getElementById('script');
 const words = TEXT.split(/\s+/);
-words.forEach((w,i)=>{
-  const span = document.createElement('span');
-  span.className = 'word';
-  span.textContent = w + (i<words.length-1 ? ' ' : '');
-  scriptEl.appendChild(span);
+const wordSpans = words.map((w,i)=>{
+  const s=document.createElement('span');
+  s.className='word'; s.textContent = w + (i<words.length-1?' ':'');
+  scriptEl.appendChild(s); return s;
 });
-const wordSpans = Array.from(document.querySelectorAll('.word'));
+const wordStartIdx = (()=>{ let arr=[], idx=0; words.forEach((w,i)=>{ arr.push(idx); idx += w.length + (i<words.length-1?1:0); }); return arr; })();
 
-/* Helper: show word by index */
-let shown = -1;
-function showNextWord(){
-  if (shown >= 0 && wordSpans[shown]) wordSpans[shown].classList.remove('on');
-  shown++;
-  if (wordSpans[shown]) wordSpans[shown].classList.add('on');
+/* Highlight helpers */
+let curWord = -1, fallbackTimer=null;
+function setWord(i){
+  if (i===curWord) return;
+  if (curWord>=0 && wordSpans[curWord]) wordSpans[curWord].classList.remove('on');
+  curWord = Math.max(0, Math.min(i, wordSpans.length-1));
+  wordSpans[curWord].classList.add('on');
 }
+function startFallback(durationMs){
+  stopFallback(); const step = Math.max(120, durationMs / words.length);
+  let i=0; setWord(0);
+  fallbackTimer = setInterval(()=>{ i++; if(i>=words.length){ stopFallback(); return; } setWord(i); }, step);
+}
+function stopFallback(){ if (fallbackTimer){ clearInterval(fallbackTimer); fallbackTimer=null; }}
 
-/* Speech setup */
-let selectedVoice = null;
+/* Voice selection (male-leaning & softer tone) */
 const picker = document.getElementById('voicePicker');
-function listVoices(){ try { return speechSynthesis.getVoices() || []; } catch { return []; } }
-function pickVoice(voices){
-  if (FORCE_VOICE_NAME){
-    const exact = voices.find(v => v.name === FORCE_VOICE_NAME);
-    if (exact) return exact;
-  }
-  for (const rx of MALE_PATS){
-    const hit = voices.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
-    if (hit) return hit;
-  }
-  return voices.find(v => /en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
-      || voices.find(v => /en/i.test(v.lang||"")) || voices[0] || null;
+let selectedVoice = null;
+function getVoices(){ try{return speechSynthesis.getVoices()||[]}catch{return[]} }
+function pickVoice(vs){
+  if (FORCE_VOICE_NAME){ const exact = vs.find(v=>v.name===FORCE_VOICE_NAME); if (exact) return exact; }
+  for (const rx of MALE_PATS){ const hit = vs.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||"")); if (hit) return hit; }
+  return vs.find(v=>/en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`))
+      || vs.find(v=>/en/i.test(v.lang||"")) || vs[0] || null;
 }
 async function ensureVoices(){
   await new Promise(res=>{
-    const vs = listVoices(); if (vs.length) return res();
+    const vs=getVoices(); if (vs.length) return res();
     speechSynthesis.addEventListener('voiceschanged', res, {once:true});
   });
-  const vs = listVoices();
+  const vs = getVoices();
   if (!selectedVoice) selectedVoice = pickVoice(vs);
-  if (vs.length){
-    picker.style.display='inline-block';
-    picker.innerHTML = vs.map(v=>`<option ${selectedVoice&&selectedVoice.name===v.name?'selected':''}>${v.name} :: ${v.lang}</option>`).join('');
-    picker.onchange=()=>{ const [name]=picker.value.split(' :: '); selectedVoice = vs.find(v=>v.name===name) || selectedVoice; };
-  }
+  // keep picker hidden; flip to block if you want manual choice:
+  // picker.style.display='block';
 }
 
-/* Speak + sync words */
-let speaking = false;
-async function speakSynced(){
-  if (!('speechSynthesis' in window)) return;
+/* Speak + word sync; reveal Begin after speech starts */
+let speaking=false, startedOnce=false;
+async function speakSynced(auto=false){
+  if (!('speechSynthesis' in window)) return false;
   await ensureVoices();
 
   // reset
-  wordSpans.forEach(w=>w.classList.remove('on')); shown = -1;
+  wordSpans.forEach(w=>w.classList.remove('on')); curWord=-1;
 
   const u = new SpeechSynthesisUtterance(TEXT);
   if (selectedVoice) u.voice = selectedVoice;
-  u.rate = 0.98;           // pace tweak
-  u.pitch = 0.9;           // subtle male tilt
+  u.rate = 0.95;        // a touch slower = softer
+  u.pitch = 0.9;        // lower timbre = softer male
   u.volume = 1.0;
 
-  // Sync: each boundary advances a word
-  u.onstart = ()=>{ speaking = true; showNextWord(); };
-  u.onboundary = (e)=>{ if (e.name === "word") showNextWord(); };
-  u.onend = ()=>{ speaking = false; };
+  u.onstart = ()=>{
+    speaking=true; setWord(0); startFallback(words.length*190);
+    // show Begin shortly after we start speaking (so it doesn't cover text at load)
+    if (!startedOnce){
+      startedOnce = true;
+      setTimeout(()=>document.body.classList.add('showBegin'), 900);
+    }
+  };
+  u.onend = ()=>{ speaking=false; stopFallback(); };
+  u.onboundary = (e)=>{
+    if (e.name==="word" && typeof e.charIndex === "number"){
+      const i = wordStartIdx.findIndex((start, idx)=> e.charIndex >= start && (idx===wordStartIdx.length-1 || e.charIndex < wordStartIdx[idx+1]));
+      if (i>=0) setWord(i);
+    }
+  };
 
   speechSynthesis.cancel();
-  speechSynthesis.speak(u);
+  try { speechSynthesis.speak(u); return true; }
+  catch(e){ return false; }
 }
 
-/* Start intro (needs a user gesture for audio) */
-document.getElementById('start').addEventListener('click', async ()=>{
-  await speakSynced();
-  document.getElementById('startControls').style.display='none';
-  document.getElementById('nextControls').style.display='flex';
-});
-document.getElementById('replay').addEventListener('click', ()=> speakSynced());
+/* Try to auto-start; if blocked, show a “tap to enable audio” button */
+const tapBtn = document.getElementById('tapToStart');
+(async ()=>{
+  const ok = await speakSynced(true);
+  if (!ok){ tapBtn.style.display='inline-block'; }
+})();
+tapBtn.addEventListener('click', async ()=>{ await speakSynced(); tapBtn.style.display='none'; });
 
-/* Switch to QR screen */
-const beginBtn = document.getElementById('begin');
-beginBtn.addEventListener('click', ()=>{
+/* Begin → QR placeholder screen */
+document.getElementById('begin').addEventListener('click', ()=>{
   try{ if (speaking) speechSynthesis.cancel(); }catch{}
-  document.querySelector('.introScreen').style.display='none';
-  const qrS = document.getElementById('qrScreen');
-  qrS.style.display='grid';
-
-  const tracking = location.search || "";
-  const formHref = FORM_URL + tracking;
-  new QRCode(document.getElementById("qrcode"), { text: formHref, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.H });
-  document.getElementById('fallback').href = formHref;
+  document.getElementById('introScreen').style.display='none';
+  document.getElementById('qrScreen').style.display='grid';
 });
 </script>
 </body>
