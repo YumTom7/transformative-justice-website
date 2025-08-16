@@ -62,6 +62,49 @@
   }
 
   @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
+  /* --- Mobile layout: put Begin + Orb below the script and allow scroll --- */
+@media (max-width: 600px) {
+  /* Let the page scroll instead of fixed centering */
+  .screen{
+    position: relative;      /* was fixed */
+    display: block;          /* break out of grid centering */
+    min-height: 100dvh;
+    padding: 5vh 6vw 12vh;   /* bottom padding so orb isn’t flush to edge */
+  }
+
+  /* Keep your big, readable paragraph; centered */
+  .introWrap{ padding: 4vh 0 0; }
+  .script{ text-align: center; }
+
+  /* Place Begin in normal flow under the text */
+  .beginWrap{
+    position: static;        /* was fixed */
+    transform: none;         /* remove translateX */
+    bottom: auto;            /* ignore previous offset */
+    margin: 20px auto 10px;  /* space between text and orb */
+    /* opacity still fades in via your JS after 900ms */
+  }
+
+  /* Place Orb under the Begin button in flow */
+  .orb{
+    position: static;        /* was fixed */
+    transform: none;
+    width: 68px;
+    height: 68px;
+    margin: 8px auto 28px;   /* center it; add breathing room */
+    display: block;
+  }
+
+  /* QR screen should also be scrollable on small screens */
+  .qrScreen{
+    position: relative;      /* break out of fixed */
+    display: block;
+    min-height: 100dvh;
+    padding: 6vh 6vw;
+  }
+  .qrCard{ margin: 0 auto; max-width: 520px; }
+}
+
 </style>
 </head>
 <body>
