@@ -3,54 +3,51 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Case Connector</title>
+<title>Case Connector – Agent 2</title>
 <meta name="robots" content="noindex,nofollow" />
 <style>
-  :root{ --fade:2200ms; --bg:#061c2b; --ink:#d9ecff; }
-  html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  :root{ --bg:#071c2b; --ink:#d9ecff; --fade:2000ms; }
+  html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
   .stage{ position:relative; height:100%; overflow:hidden; }
-  /* particle dot field (canvas sits behind) */
-  #dots{ position:absolute; inset:0; }
-  /* face */
+  /* Particles */
+  #dots{ position:absolute; inset:0; display:block; }
+  /* Face */
   .faceWrap{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
-  .face{ width:min(86vmin,720px); opacity:0; filter: blur(14px) saturate(1.15) drop-shadow(0 0 22px rgba(74,196,255,.28));
-         transition: opacity var(--fade) ease, filter var(--fade) ease; }
+  .face{ width:min(86vmin,720px); opacity:0; filter: blur(16px) saturate(1.15) drop-shadow(0 0 26px rgba(74,196,255,.28)); transition: opacity var(--fade) ease, filter var(--fade) ease; }
   .started .face{ opacity:1; filter: blur(0); }
-  /* SVG mouth overlay (positioned over the image center; tweak x/y/scale to fit your asset) */
-  .mouthWrap{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(86vmin,720px); pointer-events:none; opacity:0; transition: opacity 600ms ease; }
+  /* Mouth overlay (SVG) – clearly visible now */
+  .mouthWrap{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(86vmin,720px); pointer-events:none; opacity:0; transition:opacity 600ms ease; }
   .started .mouthWrap{ opacity:1; }
   svg{ width:100%; height:auto; }
-  .lip{ fill:#63c7ff22; stroke:#9ed0ff88; stroke-width:2; filter: drop-shadow(0 0 6px rgba(99,199,255,.5)); }
-  .open{ transform-origin:50% 50%; animation: talk 280ms ease-in-out forwards; }
-  @keyframes talk{
-    0%{ transform: scaleY(0.3); }
-    50%{ transform: scaleY(1.15); }
-    100%{ transform: scaleY(0.4); }
+  #mouth { fill:#6fd2ff55; stroke:#bfe6ff; stroke-width:2.5; filter:drop-shadow(0 0 10px rgba(111,210,255,.6)); transform-origin:50% 50%; }
+  .open { animation: talk 240ms ease-in-out forwards; }
+  @keyframes talk {
+    0%   { transform: scaleY(0.25); }
+    40%  { transform: scaleY(1.35); }
+    100% { transform: scaleY(0.35); }
   }
-  /* gate button */
-  .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(6,28,43,.55); backdrop-filter: blur(2px); transition: opacity .35s ease; }
+  /* Begin gate */
+  .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(7,28,43,.55); backdrop-filter:blur(2px); transition:opacity .35s ease; }
   .gate.hidden{ opacity:0; pointer-events:none; }
-  .gate button{ appearance:none; border:0; border-radius:12px; padding:14px 20px; font-weight:700; background:#3aa7ff; color:#061c2b; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.35); }
-  /* QR panel (optional – wire later) */
+  .gate button{ appearance:none; border:0; border-radius:14px; padding:14px 20px; font-weight:700; background:#3aa7ff; color:#071c2b; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.35); }
+  /* Optional Panel for QR later */
   .panel{ position:absolute; left:50%; bottom:6vh; transform:translateX(-50%); text-align:center; opacity:0; transition: opacity 800ms ease 400ms; }
   .panel.show{ opacity:1; }
-  .hint{ font-size:.95rem; opacity:.9; }
-  @media (prefers-reduced-motion: reduce){ .face{transition:none} }
+  @media (prefers-reduced-motion: reduce) { .face{transition:none} }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <canvas id="dots" aria-hidden="true"></canvas>
+  <canvas id="dots"></canvas>
 
   <div class="faceWrap">
-    <img class="face" id="face" src="assets/agent.jpg" alt="Agent" />
-    <!-- SVG mouth overlay. Tweak the viewBox and mouth path to line up with your image -->
-    <div class="mouthWrap" aria-hidden="true">
+    <img id="face" class="face" src="assets/agent.jpg" alt="Agent face" />
+    <!-- Position mouth over your image: tweak translate() below if needed -->
+    <div class="mouthWrap">
       <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
-        <!-- Position this group over your image’s mouth area by tweaking translate/scale -->
-        <g id="mouthGroup" transform="translate(500,600) scale(1.0)">
-          <!-- simple upper/lower lip shape that we scale on Y -->
-          <ellipse id="mouth" class="lip" rx="90" ry="18"></ellipse>
+        <!-- Adjust translate(x,y) and rx/ry to match your photo’s mouth location/size -->
+        <g id="mouthGroup" transform="translate(500,600)">
+          <ellipse id="mouth" rx="95" ry="18"></ellipse>
         </g>
       </svg>
     </div>
@@ -60,108 +57,107 @@
     <button id="begin">Tap to begin</button>
   </div>
 
-  <div class="panel" id="panel">
-    <div class="hint">Scan the code to continue (coming next).</div>
-  </div>
+  <div class="panel" id="panel"></div>
 </div>
 
 <script>
-  /*********** CONFIG ***********/
-  const TEXT = "Hi, welcome to Case Connector. I am here to serve. I know this isn’t an easy moment, and you may be experiencing mixed feelings. I am here to help. To do that, I need to get to know you better. Please scan the code to get started.";
-  // prefer male English voices (names vary across OS/browsers)
-  const maleVoicePrefs = [
-    /male/i, /Google UK English Male/i, /Microsoft (David|Guy|AriaNeural Male)/i, /Alex/i, /Daniel/i, /George/i
-  ];
-  /********* PARTICLE DOTS *********/
-  const canvas = document.getElementById('dots'), ctx = canvas.getContext('2d');
-  let w, h, dots=[];
-  function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; }
-  window.addEventListener('resize', resize); resize();
-  function initDots(n=Math.min(600, Math.floor((w*h)/6000))){
-    dots = Array.from({length:n}, () => ({
-      x: Math.random()*w, y: Math.random()*h,
-      r: Math.random()*1.6+0.4,
-      vx: (Math.random()*2-1)*0.15, vy: (Math.random()*2-1)*0.15
-    }));
-  }
-  initDots();
-  let converge = false; // when true, dots fade to black (revealing face)
-  function tick(){
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#061c2b';
-    ctx.fillRect(0,0,w,h);
-    ctx.globalAlpha = converge ? 0.2 : 1.0;
-    ctx.fillStyle = "rgba(255,255,255,0.12)";
-    for(const d of dots){
-      d.x += d.vx; d.y += d.vy;
-      if (d.x<0||d.x>w) d.vx*=-1;
-      if (d.y<0||d.y>h) d.vy*=-1;
-      ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    requestAnimationFrame(tick);
-  }
-  tick();
+/*** SCRIPT TEXT (male voice) ***/
+const TEXT = "Hi, welcome to Case Connector. I am here to serve. I know this isn’t an easy moment, and you may be experiencing mixed feelings. I am here to help. To do that, I need to get to know you better. Please scan the code to get started.";
 
-  /*********** UI ***********/
-  const stage = document.getElementById('stage');
-  const gate  = document.getElementById('gate');
-  const face  = document.getElementById('face');
-  const panel = document.getElementById('panel');
-  const mouth = document.getElementById('mouth');
+/*** MALE VOICE PREFERENCES (varies by OS/Browser) ***/
+const maleVoicePrefs = [
+  /Google UK English Male/i, /Google US English/i, /Microsoft (Guy|Davis|Christopher)/i,
+  /Daniel/i, /Alex/i, /George/i, /Male/i
+];
 
-  function imgReadyOrTimeout(img, ms=1000){
-    if (img.complete && img.naturalWidth>0) return Promise.resolve();
-    return new Promise(res=>{
-      const done=()=>{cleanup();res();};
-      const t=setTimeout(done, ms);
-      const onl=()=>done(), one=()=>done();
-      function cleanup(){clearTimeout(t); img.removeEventListener('load',onl); img.removeEventListener('error',one);}
-      img.addEventListener('load',onl,{once:true}); img.addEventListener('error',one,{once:true});
-    });
+/*** PARTICLE FIELD ***/
+const canvas = document.getElementById('dots'), ctx = canvas.getContext('2d');
+let W,H, dots=[], converge=false;
+function size(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
+addEventListener('resize', size); size();
+function initDots(count=Math.min(900, Math.floor((W*H)/5000))){
+  dots = Array.from({length:count}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    r: Math.random()*1.8+0.4,
+    vx: (Math.random()*2-1)*0.22, vy: (Math.random()*2-1)*0.22
+  }));
+}
+initDots();
+function tick(){
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#071c2b';
+  ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha = converge ? 0.15 : 1.0;
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  for(const d of dots){
+    d.x+=d.vx; d.y+=d.vy;
+    if(d.x<0||d.x>W) d.vx*=-1; if(d.y<0||d.y>H) d.vy*=-1;
+    ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
   }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(tick);
+}
+tick();
 
-  document.getElementById('begin').addEventListener('click', async ()=>{
-    await imgReadyOrTimeout(face);
-    converge = true;                 // dim dots
-    stage.classList.add('started');  // fade/blur off face
-    gate.classList.add('hidden');
-    panel.classList.add('show');
-    speak(TEXT).catch(()=>{});
+/*** UI & SYNC ***/
+const stage = document.getElementById('stage');
+const gate  = document.getElementById('gate');
+const face  = document.getElementById('face');
+const panel = document.getElementById('panel');
+const mouth = document.getElementById('mouth');
+
+function imgReadyOrTimeout(img, ms=900){
+  if (img.complete && img.naturalWidth>0) return Promise.resolve();
+  return new Promise(res=>{
+    const done=()=>{cleanup();res();};
+    const t=setTimeout(done, ms);
+    const onl=()=>done(), one=()=>done();
+    function cleanup(){clearTimeout(t); img.removeEventListener('load',onl); img.removeEventListener('error',one);}
+    img.addEventListener('load',onl,{once:true}); img.addEventListener('error',one,{once:true});
   });
+}
 
-  /*********** SPEECH + SIMPLE LIP MOTION ***********/
-  async function speak(text){
-    if (!('speechSynthesis' in window)) return;
-    // Wait for voices to load
-    const ready = new Promise(res=>{
-      const list = speechSynthesis.getVoices();
-      if (list && list.length) return res();
-      speechSynthesis.addEventListener('voiceschanged', ()=>res(), {once:true});
-    }); await ready;
+document.getElementById('begin').addEventListener('click', async ()=>{
+  await imgReadyOrTimeout(face);
+  converge = true;               // dim particles → reveals face
+  stage.classList.add('started');
+  gate.classList.add('hidden');
+  panel.classList.add('show');
+  speak(TEXT).catch(()=>{});
+});
 
-    const utter = new SpeechSynthesisUtterance(text);
-    // pick a male english voice if available
-    const voices = speechSynthesis.getVoices();
-    const preferred = voices.find(v => /en/i.test(v.lang) && maleVoicePrefs.some(rx => rx.test(v.name||v.voiceURI||"")))
-                    || voices.find(v => /en/i.test(v.lang) && /male/i.test((v.name||"")))
-                    || voices.find(v => /en/i.test(v.lang))
-                    || voices[0];
-    if (preferred) utter.voice = preferred;
+/*** SPEECH + STRONGER LIP MOTION ***/
+async function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  const ready = new Promise(r=>{
+    const list = speechSynthesis.getVoices();
+    if (list && list.length) return r();
+    speechSynthesis.addEventListener('voiceschanged', ()=>r(), {once:true});
+  });
+  await ready;
 
-    utter.rate=1.0; utter.pitch=1.0; utter.volume=1.0;
+  const utter = new SpeechSynthesisUtterance(text);
+  const voices = speechSynthesis.getVoices();
+  const preferred = voices.find(v => /en/i.test(v.lang) && maleVoicePrefs.some(rx => rx.test(v.name||v.voiceURI||"")))
+                  || voices.find(v => /en/i.test(v.lang) && /male/i.test((v.name||"")))
+                  || voices.find(v => /en/i.test(v.lang))
+                  || voices[0];
+  if (preferred) utter.voice = preferred;
+  utter.rate = 1.0; utter.pitch = 0.95; // slightly lower for male tone
+  utter.volume = 1.0;
 
-    // word-boundary driven mouth pulses
-    utter.onboundary = (e)=>{
-      if (e.name==="word" || e.charIndex>=0){
-        mouth.classList.remove('open'); void mouth.offsetWidth; // restart animation
-        mouth.classList.add('open');
-      }
-    };
-    utter.onend = ()=> mouth.classList.remove('open');
+  // Pulse mouth for each word; longer words = repeated pulses
+  let lastChar = 0;
+  utter.onboundary = (e)=>{
+    if (e.name==="word" || (e.charIndex !== undefined && e.charIndex > lastChar)){
+      mouth.classList.remove('open'); void mouth.offsetWidth; mouth.classList.add('open');
+      lastChar = e.charIndex;
+    }
+  };
+  utter.onend = ()=> mouth.classList.remove('open');
 
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utter);
-  }
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
 </script>
 </body>
 </html>
