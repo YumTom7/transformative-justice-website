@@ -3,51 +3,71 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Case Connector – Agent 2</title>
+<title>Case Connector – Agent</title>
 <meta name="robots" content="noindex,nofollow" />
 <style>
-  :root{ --bg:#071c2b; --ink:#d9ecff; --fade:2000ms; }
-  html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+  :root{ --bg:#071c2b; --ink:#d9ecff; --fade:1900ms;
+         /* tweak these 2 numbers to line the mouth up with your photo */
+         --mouth-x:50%; --mouth-y:62%;
+  }
+  html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
   .stage{ position:relative; height:100%; overflow:hidden; }
-  /* Particles */
+
+  /* Particle dots */
   #dots{ position:absolute; inset:0; display:block; }
-  /* Face */
-  .faceWrap{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
-  .face{ width:min(86vmin,720px); opacity:0; filter: blur(16px) saturate(1.15) drop-shadow(0 0 26px rgba(74,196,255,.28)); transition: opacity var(--fade) ease, filter var(--fade) ease; }
+
+  /* Image reveal */
+  .agent{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
+  .face{ width:min(86vmin,720px); max-width:96%;
+         opacity:0; filter: blur(16px) saturate(1.1) drop-shadow(0 0 26px rgba(74,196,255,.28));
+         transition: opacity var(--fade) ease, filter var(--fade) ease; }
   .started .face{ opacity:1; filter: blur(0); }
-  /* Mouth overlay (SVG) – clearly visible now */
-  .mouthWrap{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(86vmin,720px); pointer-events:none; opacity:0; transition:opacity 600ms ease; }
+
+  /* Mouth overlay (SVG) – positioned over the face using --mouth-x/--mouth-y */
+  .mouthWrap{ position:absolute; left:var(--mouth-x); top:var(--mouth-y);
+              transform:translate(-50%,-50%); width:min(86vmin,720px); pointer-events:none; opacity:0;
+              transition: opacity 600ms ease; }
   .started .mouthWrap{ opacity:1; }
   svg{ width:100%; height:auto; }
-  #mouth { fill:#6fd2ff55; stroke:#bfe6ff; stroke-width:2.5; filter:drop-shadow(0 0 10px rgba(111,210,255,.6)); transform-origin:50% 50%; }
-  .open { animation: talk 240ms ease-in-out forwards; }
-  @keyframes talk {
-    0%   { transform: scaleY(0.25); }
-    40%  { transform: scaleY(1.35); }
-    100% { transform: scaleY(0.35); }
-  }
-  /* Begin gate */
-  .gate{ position:absolute; inset:0; display:grid; place-items:center; background:rgba(7,28,43,.55); backdrop-filter:blur(2px); transition:opacity .35s ease; }
+  #mouth { fill:#72d4ff4d; stroke:#c7ecff; stroke-width:2.5;
+           filter:drop-shadow(0 0 10px rgba(111,210,255,.6));
+           transform-origin:50% 50%; transition: transform 110ms ease; }
+  /* viseme-ish shapes controlled by data-shape attr */
+  #mouth[data-shape="closed"] { transform: scaleX(1.0) scaleY(0.25); }
+  #mouth[data-shape="AA"]     { transform: scaleX(1.0) scaleY(2.0);  }  /* ah */
+  #mouth[data-shape="O"]      { transform: scaleX(0.7) scaleY(1.4);  }  /* oh */
+  #mouth[data-shape="E"]      { transform: scaleX(1.7) scaleY(0.55); }  /* ee */
+  #mouth.pulse { animation: pulse 150ms ease-in-out; }
+  @keyframes pulse{ 0%{transform:translateZ(0) scale(1,1)} 50%{transform:translateZ(0) scale(1.02,1.12)} 100%{transform:translateZ(0) scale(1,1)} }
+
+  /* Begin gate (needed for audio gesture on mobile) */
+  .gate{ position:absolute; inset:0; display:grid; place-items:center;
+         background:rgba(7,28,43,.55); backdrop-filter:blur(2px); transition:opacity .35s; }
   .gate.hidden{ opacity:0; pointer-events:none; }
-  .gate button{ appearance:none; border:0; border-radius:14px; padding:14px 20px; font-weight:700; background:#3aa7ff; color:#071c2b; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.35); }
-  /* Optional Panel for QR later */
-  .panel{ position:absolute; left:50%; bottom:6vh; transform:translateX(-50%); text-align:center; opacity:0; transition: opacity 800ms ease 400ms; }
-  .panel.show{ opacity:1; }
-  @media (prefers-reduced-motion: reduce) { .face{transition:none} }
+  .gate button{ appearance:none; border:0; border-radius:14px; padding:14px 20px; font-weight:700;
+                background:#3aa7ff; color:#071c2b; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.35); }
+
+  /* Optional voice picker (appears top-right) */
+  #voicePicker{ position:absolute; top:10px; right:10px; background:rgba(0,0,0,.35); color:#fff;
+                border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:6px 8px; display:none; }
+
+  @media (prefers-reduced-motion: reduce){ .face{transition:none} }
 </style>
 </head>
 <body>
-<div class="stage" id="stage">
-  <canvas id="dots"></canvas>
+<select id="voicePicker" aria-label="Choose voice"></select>
 
-  <div class="faceWrap">
+<div class="stage" id="stage">
+  <canvas id="dots" aria-hidden="true"></canvas>
+
+  <div class="agent">
     <img id="face" class="face" src="assets/agent.jpg" alt="Agent face" />
-    <!-- Position mouth over your image: tweak translate() below if needed -->
-    <div class="mouthWrap">
+    <div class="mouthWrap" aria-hidden="true">
+      <!-- 1000x1000 viewBox makes positioning simple; mouth ellipse sits at center -->
       <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
-        <!-- Adjust translate(x,y) and rx/ry to match your photo’s mouth location/size -->
-        <g id="mouthGroup" transform="translate(500,600)">
-          <ellipse id="mouth" rx="95" ry="18"></ellipse>
+        <g transform="translate(500,500)">
+          <ellipse id="mouth" rx="90" ry="20" data-shape="closed"></ellipse>
         </g>
       </svg>
     </div>
@@ -56,29 +76,33 @@
   <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Begin">
     <button id="begin">Tap to begin</button>
   </div>
-
-  <div class="panel" id="panel"></div>
 </div>
 
 <script>
-/*** SCRIPT TEXT (male voice) ***/
-const TEXT = "Hi, welcome to Case Connector. I am here to serve. I know this isn’t an easy moment, and you may be experiencing mixed feelings. I am here to help. To do that, I need to get to know you better. Please scan the code to get started.";
+/*** ======= CONFIG ======= ***/
+const SCRIPT_TEXT =
+  "Hi, welcome to Case Connector. I am here to serve. I know this isn’t an easy moment, and you may be experiencing mixed feelings. I am here to help. To do that, I need to get to know you better. Please scan the code to get started.";
 
-/*** MALE VOICE PREFERENCES (varies by OS/Browser) ***/
-const maleVoicePrefs = [
-  /Google UK English Male/i, /Google US English/i, /Microsoft (Guy|Davis|Christopher)/i,
-  /Daniel/i, /Alex/i, /George/i, /Male/i
+// If you know the exact voice name on your device, set it here to force it.
+// Examples: "Google UK English Male", "Microsoft Guy Online (Natural) - English (United States)", "Alex"
+const FORCE_VOICE_NAME = "";
+
+// Prefer male voices by these patterns if FORCE_VOICE_NAME isn't set:
+const MALE_PATTERNS = [
+  /Google UK English Male/i, /Google US English/i, /Microsoft (Guy|Christopher|Eric|Ryan|Steffan)/i,
+  /\bAlex\b/i, /\bDaniel\b/i, /\bGeorge\b/i, /\bMale\b/i
 ];
+/*** ======================= ***/
 
-/*** PARTICLE FIELD ***/
+/* ---------- Particle field ---------- */
 const canvas = document.getElementById('dots'), ctx = canvas.getContext('2d');
 let W,H, dots=[], converge=false;
 function size(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
 addEventListener('resize', size); size();
-function initDots(count=Math.min(900, Math.floor((W*H)/5000))){
-  dots = Array.from({length:count}, () => ({
+function initDots(n=Math.min(1000, Math.floor((W*H)/4500))){
+  dots = Array.from({length:n}, () => ({
     x: Math.random()*W, y: Math.random()*H,
-    r: Math.random()*1.8+0.4,
+    r: Math.random()*1.8+0.5,
     vx: (Math.random()*2-1)*0.22, vy: (Math.random()*2-1)*0.22
   }));
 }
@@ -86,11 +110,12 @@ initDots();
 function tick(){
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#071c2b';
   ctx.fillRect(0,0,W,H);
-  ctx.globalAlpha = converge ? 0.15 : 1.0;
+  ctx.globalAlpha = converge ? 0.13 : 1.0;
   ctx.fillStyle = "rgba(255,255,255,0.12)";
   for(const d of dots){
     d.x+=d.vx; d.y+=d.vy;
-    if(d.x<0||d.x>W) d.vx*=-1; if(d.y<0||d.y>H) d.vy*=-1;
+    if(d.x<0||d.x>W) d.vx*=-1;
+    if(d.y<0||d.y>H) d.vy*=-1;
     ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -98,12 +123,12 @@ function tick(){
 }
 tick();
 
-/*** UI & SYNC ***/
+/* ---------- UI ---------- */
 const stage = document.getElementById('stage');
 const gate  = document.getElementById('gate');
 const face  = document.getElementById('face');
-const panel = document.getElementById('panel');
 const mouth = document.getElementById('mouth');
+const picker = document.getElementById('voicePicker');
 
 function imgReadyOrTimeout(img, ms=900){
   if (img.complete && img.naturalWidth>0) return Promise.resolve();
@@ -117,43 +142,95 @@ function imgReadyOrTimeout(img, ms=900){
 }
 
 document.getElementById('begin').addEventListener('click', async ()=>{
-  await imgReadyOrTimeout(face);
-  converge = true;               // dim particles → reveals face
+  await imgReadyOrTimeout(face);     // don’t block forever if the image is missing
+  converge = true;                    // dim dots → reveal face
   stage.classList.add('started');
   gate.classList.add('hidden');
-  panel.classList.add('show');
-  speak(TEXT).catch(()=>{});
+  await speakWithMouth(SCRIPT_TEXT).catch(()=>{});
 });
 
-/*** SPEECH + STRONGER LIP MOTION ***/
-async function speak(text){
-  if(!('speechSynthesis' in window)) return;
-  const ready = new Promise(r=>{
-    const list = speechSynthesis.getVoices();
-    if (list && list.length) return r();
-    speechSynthesis.addEventListener('voiceschanged', ()=>r(), {once:true});
+/* ---------- Speech + lip motion ---------- */
+let selectedVoice = null;
+let fallbackPulseTimer = null;
+
+function listVoices(){ try { return speechSynthesis.getVoices() || []; } catch { return []; } }
+
+function pickVoice(voices){
+  if (FORCE_VOICE_NAME){
+    const exact = voices.find(v => v.name === FORCE_VOICE_NAME);
+    if (exact) return exact;
+  }
+  for (const rx of MALE_PATTERNS){
+    const hit = voices.find(v => rx.test(`${v.name} ${v.voiceURI||""}`) && /en/i.test(v.lang||""));
+    if (hit) return hit;
+  }
+  const labeledMale = voices.find(v => /en/i.test(v.lang||"") && /male/i.test(`${v.name} ${v.voiceURI||""}`));
+  if (labeledMale) return labeledMale;
+  const english = voices.find(v => /en/i.test(v.lang||""));
+  return english || voices[0] || null;
+}
+
+function buildPicker(voices){
+  if (!voices.length) return;
+  picker.style.display = 'block'; // show small selector so you can force a male voice
+  picker.innerHTML = voices.map(v => `<option ${selectedVoice && selectedVoice.name===v.name?'selected':''}>${v.name} :: ${v.lang}</option>`).join('');
+  picker.onchange = () => {
+    const [name] = picker.value.split(' :: ');
+    const v = voices.find(v => v.name===name);
+    if (v) selectedVoice = v;
+  };
+}
+
+function setMouthShape(shape){ mouth.setAttribute('data-shape', shape); }
+function pulse(){ mouth.classList.remove('pulse'); void mouth.offsetWidth; mouth.classList.add('pulse'); }
+
+/* Guess a viseme from the current word’s vowels */
+function guessShapeForWord(word){
+  const w = (word||"").toLowerCase();
+  if (/[oou]/.test(w)) return "O";
+  if (/[ei]/.test(w))  return "E";
+  if (/[a]/.test(w))   return "AA";
+  return "AA";
+}
+
+async function speakWithMouth(text){
+  if (!('speechSynthesis' in window)) return;
+
+  // Wait for voices to load (Chrome quirk)
+  await new Promise(res=>{
+    const voices = listVoices();
+    if (voices.length) return res();
+    speechSynthesis.addEventListener('voiceschanged', res, {once:true});
   });
-  await ready;
+
+  const voices = listVoices();
+  if (!selectedVoice) selectedVoice = pickVoice(voices);
+  buildPicker(voices);
 
   const utter = new SpeechSynthesisUtterance(text);
-  const voices = speechSynthesis.getVoices();
-  const preferred = voices.find(v => /en/i.test(v.lang) && maleVoicePrefs.some(rx => rx.test(v.name||v.voiceURI||"")))
-                  || voices.find(v => /en/i.test(v.lang) && /male/i.test((v.name||"")))
-                  || voices.find(v => /en/i.test(v.lang))
-                  || voices[0];
-  if (preferred) utter.voice = preferred;
-  utter.rate = 1.0; utter.pitch = 0.95; // slightly lower for male tone
-  utter.volume = 1.0;
+  if (selectedVoice) utter.voice = selectedVoice;
+  // Tilt towards a male timbre even if voice is neutral
+  utter.rate = 1.0; utter.pitch = 0.9; utter.volume = 1.0;
 
-  // Pulse mouth for each word; longer words = repeated pulses
-  let lastChar = 0;
+  // Continuous fallback motion (in case boundary events are sparse on some browsers)
+  function startFallback(){
+    clearInterval(fallbackPulseTimer);
+    fallbackPulseTimer = setInterval(()=>{ pulse(); }, 180);
+  }
+  function stopFallback(){ clearInterval(fallbackPulseTimer); fallbackPulseTimer = null; }
+
+  // Word-boundary → choose shape from the actual word
   utter.onboundary = (e)=>{
-    if (e.name==="word" || (e.charIndex !== undefined && e.charIndex > lastChar)){
-      mouth.classList.remove('open'); void mouth.offsetWidth; mouth.classList.add('open');
-      lastChar = e.charIndex;
+    if (e.name === "word" && e.charIndex != null){
+      const upTo = text.slice(0, e.charIndex);
+      const words = upTo.split(/\s+/);
+      const current = text.slice(e.charIndex).split(/\s+/)[0];
+      setMouthShape(guessShapeForWord(current));
+      pulse();
     }
   };
-  utter.onend = ()=> mouth.classList.remove('open');
+  utter.onstart = ()=>{ setMouthShape("AA"); startFallback(); };
+  utter.onend   = ()=>{ stopFallback(); setMouthShape("closed"); mouth.classList.remove('pulse'); };
 
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
