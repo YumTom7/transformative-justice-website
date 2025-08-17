@@ -25,6 +25,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
       height: 100%;
       padding: 20px;
       box-sizing: border-box;
@@ -40,6 +41,7 @@
       font-weight: 900;
       font-size: clamp(36px, 6vw, 84px);
       margin-bottom: 8px;
+      white-space: nowrap;
     }
 
     .headline .case {
@@ -71,6 +73,7 @@
       justify-content: center;
       gap: 16px;
       flex-wrap: wrap;
+      margin-bottom: 60px; /* Give space for the orb */
     }
 
     .langBtn {
@@ -91,26 +94,28 @@
     }
 
     .orb {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
       width: 78px;
       height: 78px;
       border-radius: 50%;
       background: radial-gradient(circle, #6db5f2, #1f4ba0);
-      box-shadow: 0 0 30px rgba(0, 128, 255, 0.8), 0 0 80px rgba(0, 128, 255, 0.35) inset;
+      box-shadow:
+        0 0 30px rgba(0, 128, 255, 0.8),
+        0 0 80px rgba(0, 128, 255, 0.35) inset;
       animation: pulse 2s infinite;
       opacity: 0.9;
     }
 
     @keyframes pulse {
-      0% { transform: translateX(-50%) scale(1); }
-      50% { transform: translateX(-50%) scale(1.12); }
-      100% { transform: translateX(-50%) scale(1); }
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
     }
 
     @media (max-width: 480px) {
+      .headline {
+        white-space: normal;
+      }
+
       .languageButtons {
         flex-direction: column;
         gap: 12px;
@@ -148,9 +153,9 @@
         <button class="langBtn" onclick="location.href='https://YOUR_SPANISH_FORM_URL'">Comenzar en Español</button>
       </div>
     </div>
-  </div>
 
-  <div class="orb" aria-hidden="true"></div>
+    <div class="orb" aria-hidden="true"></div>
+  </div>
 
 </body>
 </html>
