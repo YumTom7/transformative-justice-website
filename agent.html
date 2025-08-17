@@ -1,173 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CaseConnect – Guided Intro</title>
+  <title>CaseConnect – Guía (ES)</title>
   <meta name="robots" content="noindex,nofollow"/>
   <style>
-    :root {
-      --bg: #000;
-      --ink: #e7eef8;
-      --blue: #2aa6f2;
+    :root{
+      --bg:#000; --ink:#e7eef8; --blue:#2aa6f2;
+      --orb-size:78px; --orb-gap:42px;
     }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden;}
+    .screen{min-height:100svh;display:flex;align-items:center;justify-content:center;text-align:center;
+      padding:20px;box-sizing:border-box;padding-bottom:calc(var(--orb-size) + var(--orb-gap));}
+    .introWrap{max-width:1000px;width:100%;}
+    .headline{margin:0 0 8px;font-weight:900;font-size:clamp(36px,6vw,84px);white-space:nowrap;}
+    .headline .case{color:#fff}
+    .headline .connect{
+      background:linear-gradient(180deg,#2aa6f2 0%,#77c7ff 100%);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
     }
-
-    .screen {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      height: 100%;
-      padding: 20px;
-      box-sizing: border-box;
-      text-align: center;
+    .tagline{margin:0 0 24px;font-size:clamp(16px,2.1vw,28px);opacity:.9}
+    .script{margin:0 auto 32px;max-width:1000px;line-height:1.6;font-size:clamp(18px,2.5vw,32px);padding:0 5vw}
+    .actions{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+    .btn{appearance:none;border:0;border-radius:22px;padding:14px 26px;font-weight:800;
+      font-size:clamp(16px,1.8vw,24px);background:#ffb347;color:#000;cursor:pointer;transition:background .25s ease;}
+    .btn:hover{background:#ffd284}
+    .orb{
+      position:fixed; left:50%; bottom:max(24px, env(safe-area-inset-bottom) + 12px);
+      transform:translateX(-50%); width:var(--orb-size); height:var(--orb-size); border-radius:50%;
+      background:radial-gradient(circle,#6db5f2,#1f4ba0);
+      box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
+      animation:p 2s infinite; opacity:.9; pointer-events:none; z-index:0;
     }
-
-    .introWrap {
-      max-width: 1000px;
-      width: 100%;
+    @keyframes p{
+      0%{transform:translateX(-50%) scale(1)}
+      50%{transform:translateX(-50%) scale(1.12)}
+      100%{transform:translateX(-50%) scale(1)}
     }
-
-    .headline {
-      font-weight: 900;
-      font-size: clamp(36px, 6vw, 84px);
-      margin-bottom: 8px;
-      white-space: nowrap;
+    @media (max-width:520px){
+      .headline{white-space:normal}
+      .btn{width:100%;max-width:320px}
     }
-
-    .headline .case {
-      color: #fff;
-    }
-
-    .headline .connect {
-      background: linear-gradient(180deg, #2aa6f2 0%, #77c7ff 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .tagline {
-      font-size: clamp(16px, 2.1vw, 28px);
-      margin-bottom: 24px;
-      opacity: 0.9;
-    }
-
-    .script {
-      font-size: clamp(18px, 2.5vw, 32px);
-      line-height: 1.6;
-      margin-bottom: 32px;
-      padding: 0 5vw;
-    }
-
-    .languageButtons {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 60px; /* Give space for the orb */
-    }
-
-    .langBtn {
-      appearance: none;
-      border: none;
-      border-radius: 22px;
-      padding: 14px 26px;
-      font-weight: 700;
-      font-size: clamp(16px, 1.8vw, 24px);
-      background: #ffb347;
-      color: #000;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .:root {
-  --orb-size: 78px;
-  --orb-gap: 48px;
-}
-
-.languageButtons {
-  /* ensure orb never touches buttons */
-  margin-bottom: calc(var(--orb-size) + var(--orb-gap));
-}
-
-.orb {
-  position: fixed;
-  left: 50vw;                 /* robust viewport center */
-  bottom: max(34px, env(safe-area-inset-bottom) + 12px);
-  transform: translate(-50%, 0);  /* pair with keyframes below */
-  width: var(--orb-size);
-  height: var(--orb-size);
-  border-radius: 50%;
-  background: radial-gradient(circle, #6db5f2, #1f4ba0);
-  box-shadow:
-    0 0 30px rgba(0,128,255,.8),
-    0 0 80px rgba(0,128,255,.35) inset;
-  animation: orbPulse 2s infinite;
-  opacity: .9;
-  pointer-events: none;       /* never blocks button taps */
-  z-index: 0;                 /* sits behind content */
-}
-
-@keyframes orbPulse {
-  0%   { transform: translate(-50%, 0) scale(1); }
-  50%  { transform: translate(-50%, 0) scale(1.12); }
-  100% { transform: translate(-50%, 0) scale(1); }
-}
-
-    @media (max-width: 480px) {
-      .headline {
-        white-space: normal;
-      }
-
-      .languageButtons {
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .langBtn {
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .orb {
-        animation: none;
-      }
-    }
+    @media (prefers-reduced-motion:reduce){.orb{animation:none}}
   </style>
 </head>
 <body>
-
   <div class="screen">
     <div class="introWrap">
-      <h1 class="headline">
-        <span class="case">Welcome to </span><span class="connect">CaseConnect</span>
-      </h1>
-      <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
+      <h1 class="headline"><span class="case">Bienvenido a </span><span class="connect">CaseConnect</span></h1>
+      <p class="tagline">Soy el <strong>Conector del Caso</strong>—tu guía en este paso.</p>
 
-      <div class="script">
-        I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. Please choose your preferred language so I can better understand your needs.
-      </div>
+      <p class="script">
+        Sé que este puede ser un momento difícil, y es natural sentir muchas cosas a la vez.
+        Estoy aquí para apoyarte. Quiero comprender mejor tus necesidades.
+      </p>
 
-      <div class="languageButtons">
-        <button class="langBtn" onclick="location.href='https://YOUR_ENGLISH_FORM_URL'">Begin in English</button>
-        <button class="langBtn" onclick="location.href='https://YOUR_SPANISH_FORM_URL'">Comenzar en Español</button>
+      <div class="actions">
+        <button class="btn" onclick="location.href='https://ES_AUTOMATION_URL'">Comenzar</button>
       </div>
     </div>
-
-    <div class="orb" aria-hidden="true"></div>
   </div>
 
+  <div class="orb" aria-hidden="true"></div>
 </body>
 </html>
