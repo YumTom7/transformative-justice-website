@@ -21,7 +21,17 @@
   }
   .tagline{ margin:0 0 16px; font-size:clamp(16px,2.1vw,28px); opacity:.9 }
 
-  /* Big paragraph */
+  .controls{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:18px; }
+  #voicePicker{
+    padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.25);
+    background:#0b0f15; color:#cfe9ff;
+  }
+  .playBtn{
+    appearance:none; border:1px solid rgba(255,255,255,.25);
+    border-radius:18px; padding:10px 14px; background:transparent; color:#9ed0ff; cursor:pointer;
+  }
+
+  /* Big paragraph (plain text, no highlighting) */
   .script{
     margin:24px auto 22px; max-width:1000px; line-height:1.6;
     font-size:clamp(22px,2.8vw,40px); text-align:center;
@@ -62,65 +72,6 @@
   }
 
   @media (prefers-reduced-motion:reduce){ .orb{animation:none} }
-/* --- Mobile layout: center Begin + Orb under the script --- */
-@media (max-width: 600px) {
-  /* make the section a centered column */
-  .screen{
-    position: relative !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start;
-    min-height: 100dvh;
-    padding: 5vh 6vw 12vh;
-    text-align: center;
-  }
-
-  .introWrap{ padding: 4vh 0 0; width: 100%; }
-  .script{ text-align: center; }
-
-  .beginWrap{
-    position: static !important;
-    bottom: auto !important;
-    left: auto !important;
-    transform: none !important;
-    width: 100%;
-    margin: 20px auto 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .beginBtn{
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-  }
-
-  /* hard override ALL desktop orb positioning */
-  .orb{
-    position: static !important;
-    bottom: auto !important;
-    left: auto !important;
-    right: auto !important;
-    transform: none !important;
-    display: block !important;
-    width: 68px; height: 68px;
-    margin: 16px auto 28px !important;   /* centers it */
-  }
-}
-
-   .qrScreen{
-    position: relative;
-    display: block;
-    min-height: 100dvh;
-    padding: 6vh 6vw;
-    text-align: center;
-  }
-  .qrCard{ margin: 0 auto; max-width: 520px; }
-}
-</style>
- 
 </style>
 </head>
 <body>
@@ -132,6 +83,11 @@
       <span class="case">Welcome to </span><span class="connect">CaseConnect</span>
     </h1>
     <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this step.</p>
+
+    <div class="controls">
+      <select id="voicePicker" aria-label="Choose voice"></select>
+      <button class="playBtn" id="playVoice">🔊 Play narration</button>
+    </div>
 
     <div class="script" id="script">
       Welcome to Case Connector. I know this may be a difficult moment, and it’s natural to feel many things at once. I’m here to support you. To begin, please scan the code so I can better understand your needs.
@@ -151,21 +107,59 @@
 </div>
 
 <script>
-/* Minimal JS: only handles Begin button + QR transition */
+const TEXT = document.getElementById('script').textContent.trim();
+const voicePicker = document.getElementById('voicePicker');
+const playBtn     = document.getElementById('playVoice');
 const beginWrap   = document.getElementById('beginWrap');
 const beginBtn    = document.getElementById('begin');
 const introScreen = document.getElementById('introScreen');
 const qrScreen    = document.getElementById('qrScreen');
 
-/* Show Begin after short delay */
+/* Show Begin after a moment */
 setTimeout(()=>{ beginWrap.style.opacity = 1; }, 900);
 
-/* Begin → QR placeholder */
+/* Voice handling */
+function getVoices(){ try { return speechSynthesis.getVoices() || []; } catch { return []; } }
+
+async function loadVoices(){
+  const t0 = performance.now();
+  while (performance.now() - t0 < 2000){
+    const vs = getVoices();
+    if (vs.length){
+      voicePicker.innerHTML = vs.map(v => `<option value="${v.name}">${v.name} :: ${v.lang}</option>`).join('');
+      // default to a US English voice if present
+      const def = vs.find(v=>/en[-_]?US/i.test(v.lang||"")) || vs[0];
+      if (def){
+        const opt = [...voicePicker.options].find(o=>o.value===def.name);
+        if (opt) opt.selected = true;
+      }
+      return;
+    }
+    await new Promise(r=>setTimeout(r,100));
+  }
+}
+speechSynthesis.addEventListener?.('voiceschanged', loadVoices, {once:true});
+loadVoices();
+
+/* Play narration (no highlighting) */
+async function playNarration(){
+  if (!('speechSynthesis' in window)) return;
+  await loadVoices();
+  const vs = getVoices();
+  const v  = vs.find(x=>x.name===voicePicker.value) || vs[0];
+  const u  = new SpeechSynthesisUtterance(TEXT);
+  if (v) u.voice = v;
+  u.rate = 0.95; u.pitch = 0.9; u.volume = 1.0;
+  try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
+}
+playBtn.addEventListener('click', playNarration);
+
+/* Begin → QR */
 beginBtn.addEventListener('click', ()=>{
+  try{ speechSynthesis.cancel(); }catch{}
   introScreen.style.display = 'none';
   qrScreen.style.display = 'grid';
 });
 </script>
 </body>
 </html>
-
