@@ -89,29 +89,38 @@
       transition: background 0.3s ease;
     }
 
-    .langBtn:hover {
-      background: #ffd284;
-    }
+    .:root {
+  --orb-size: 78px;
+  --orb-gap: 48px;
+}
+
+.languageButtons {
+  /* ensure orb never touches buttons */
+  margin-bottom: calc(var(--orb-size) + var(--orb-gap));
+}
+
 .orb {
   position: fixed;
-  bottom: 34px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 78px;
-  height: 78px;
+  left: 50vw;                 /* robust viewport center */
+  bottom: max(34px, env(safe-area-inset-bottom) + 12px);
+  transform: translate(-50%, 0);  /* pair with keyframes below */
+  width: var(--orb-size);
+  height: var(--orb-size);
   border-radius: 50%;
   background: radial-gradient(circle, #6db5f2, #1f4ba0);
   box-shadow:
-    0 0 30px rgba(0, 128, 255, 0.8),
-    0 0 80px rgba(0, 128, 255, 0.35) inset;
-  animation: p 2s infinite;
-  opacity: 0.9;
+    0 0 30px rgba(0,128,255,.8),
+    0 0 80px rgba(0,128,255,.35) inset;
+  animation: orbPulse 2s infinite;
+  opacity: .9;
+  pointer-events: none;       /* never blocks button taps */
+  z-index: 0;                 /* sits behind content */
 }
 
-@keyframes p {
-  0%   { transform: translateX(-50%) scale(1); }
-  50%  { transform: translateX(-50%) scale(1.12); }
-  100% { transform: translateX(-50%) scale(1); }
+@keyframes orbPulse {
+  0%   { transform: translate(-50%, 0) scale(1); }
+  50%  { transform: translate(-50%, 0) scale(1.12); }
+  100% { transform: translate(-50%, 0) scale(1); }
 }
 
     @media (max-width: 480px) {
