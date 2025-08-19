@@ -74,7 +74,7 @@
       opacity: 0;
       transform: scale(0.95);
       pointer-events: none;
-      transition: opacity 2s ease, transform 0.4s ease;
+      transition: opacity 2s ease, transform 0.6s ease;
     }
 
     .btn.show {
@@ -143,16 +143,18 @@
       const orb = document.getElementById('orb');
       const btn = document.getElementById('beginBtn');
 
+      // Step 1: Wait 3 seconds
       setTimeout(() => {
-        // Fade out the orb over 2s
+        // Step 2: Fade out orb
         orb.classList.add('fadeOut');
 
-        // Then after 2 more seconds, show the button
+        // Step 3: After 2 seconds, fade in the button
         setTimeout(() => {
-          btn.classList.add('show');
+          requestAnimationFrame(() => {
+            btn.classList.add('show');
+          });
         }, 2000);
-
-      }, 3000); // Initial pause of 3s
+      }, 3000);
     });
   </script>
 </body>
