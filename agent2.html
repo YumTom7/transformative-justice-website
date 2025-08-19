@@ -1,21 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CaseConnect – Guided Intro (EN)</title>
+  <title>CaseConnect – Guía (ES)</title>
   <meta name="robots" content="noindex,nofollow"/>
   <style>
     :root{
       --bg:#000; --ink:#e7eef8; --blue:#2aa6f2;
       --orb-size:78px; --orb-gap:42px;
     }
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden;}
+    html,body{
+      margin:0;
+      height:100%;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      overflow-x:hidden;
+    }
     .screen{
-      min-height:100svh; /* better mobile vh */
-      display:flex; align-items:center; justify-content:center; text-align:center;
-      padding:20px; box-sizing:border-box;
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:20px;
+      box-sizing:border-box;
       padding-bottom:calc(var(--orb-size) + var(--orb-gap));
     }
     .introWrap{max-width:1000px;width:100%;}
@@ -28,49 +38,96 @@
     .tagline{margin:0 0 24px;font-size:clamp(16px,2.1vw,28px);opacity:.9}
     .script{margin:0 auto 32px;max-width:1000px;line-height:1.6;font-size:clamp(18px,2.5vw,32px);padding:0 5vw}
     .actions{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+    
     .btn{
       appearance:none;border:0;border-radius:22px;padding:14px 26px;font-weight:800;
       font-size:clamp(16px,1.8vw,24px);background:#ffb347;color:#000;cursor:pointer;
-      transition:background .25s ease;
+      transition:background .25s ease, opacity .6s ease, transform .6s ease;
     }
     .btn:hover{background:#ffd284}
-    /* ORB — original behavior, fixed & pulsing */
+
+    /* BEGIN BUTTON INITIAL STATE (HIDDEN) */
+    .btn.hidden {
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+    }
+
+    .btn.show {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    /* ORB - SAME VISUAL DESIGN, ADDS FADE ANIMATION */
     .orb{
-      position:fixed; left:50%; bottom:max(24px, env(safe-area-inset-bottom) + 12px);
-      transform:translateX(-50%); width:var(--orb-size); height:var(--orb-size); border-radius:50%;
+      position:fixed;
+      left:50%;
+      bottom:max(24px, env(safe-area-inset-bottom) + 12px);
+      transform:translateX(-50%);
+      width:var(--orb-size);
+      height:var(--orb-size);
+      border-radius:50%;
       background:radial-gradient(circle,#6db5f2,#1f4ba0);
       box-shadow:0 0 30px rgba(0,128,255,.8), 0 0 80px rgba(0,128,255,.35) inset;
-      animation:p 2s infinite; opacity:.9; pointer-events:none; z-index:0;
+      animation:pulse 2s infinite;
+      opacity:.9;
+      pointer-events:none;
+      z-index:0;
+      transition:opacity .6s ease, transform .6s ease;
     }
-    @keyframes p{
+
+    .orb.fadeOut {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.5);
+    }
+
+    @keyframes pulse {
       0%{transform:translateX(-50%) scale(1)}
       50%{transform:translateX(-50%) scale(1.12)}
       100%{transform:translateX(-50%) scale(1)}
     }
+
     @media (max-width:520px){
       .headline{white-space:normal}
       .btn{width:100%;max-width:320px}
     }
-    @media (prefers-reduced-motion:reduce){.orb{animation:none}}
+
+    @media (prefers-reduced-motion:reduce){
+      .orb{animation:none}
+    }
   </style>
 </head>
 <body>
   <div class="screen">
     <div class="introWrap">
-      <h1 class="headline"><span class="case">Welcome to </span><span class="connect">CaseConnect</span></h1>
-      <p class="tagline">I’m the <strong>Case Connector</strong>—your guide on this process.</p>
+      <h1 class="headline"><span class="case">Bienvenido a </span><span class="connect">CaseConnect</span></h1>
+      <p class="tagline">Soy el <strong>Conector de Casos</strong>—tu guía en este proceso.</p>
 
       <p class="script">
-        This may be a difficult moment. It’s natural to feel many things at once.
-        I’m here to support you and better understand your needs.
+        Éste puede ser un momento difícil. Estoy aquí para apoyarte y comprender mejor tus necesidades.
       </p>
 
       <div class="actions">
-        <button class="btn" onclick="location.href='https://forms.gle/9iDyvXU7XrFk29cT7'">Begin</button>
+        <button class="btn hidden" id="beginBtn" onclick="location.href='https://forms.gle/jXFryiz8xGXMzVyf9'">Comenzar</button>
       </div>
     </div>
   </div>
 
-  <div class="orb" aria-hidden="true"></div>
+  <div class="orb" id="orb" aria-hidden="true"></div>
+
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const orb = document.getElementById('orb');
+        const btn = document.getElementById('beginBtn');
+        if (orb && btn) {
+          orb.classList.add('fadeOut');
+          btn.classList.remove('hidden');
+          btn.classList.add('show');
+        }
+      }, 2000); // 2-second delay before transition
+    });
+  </script>
 </body>
 </html>
