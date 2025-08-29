@@ -1,114 +1,87 @@
-import io, os, tempfile, time, json, base64, subprocess
-from typing import Dict
-from fastapi import FastAPI, UploadFile, File, Query
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from openai import OpenAI
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Jail Call Triage (Pilot)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;margin:20px}
+    .drop{border:2px dashed #999;border-radius:12px;padding:24px;text-align:center}
+    .btn{padding:10px 16px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    .row{display:flex;gap:10px;margin-top:10px;align-items:center}
+    .card{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}
+    #report{display:none}
+  </style>
+</head>
+<body>
+  <h1>Jail Call Triage (Pilot)</h1>
+  <div class="drop" id="drop">
+    <p>Drop a .wav (or click select)</p>
+    <input type="file" id="file" accept=".wav,.mp3,.m4a" />
+    <div class="row"><button class="btn" id="start">Process</button><span id="status"></span></div>
+  </div>
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-client = OpenAI(api_key=OPENAI_API_KEY)
+  <div id="report" class="card">
+    <h3>Report ready</h3>
+    <div class="row">
+      <button class="btn" id="printBtn">Print / Save as PDF</button>
+      <a id="jsonBtn" class="btn" download="triage-summary.json">Download JSON Summary</a>
+    </div>
+    <iframe id="reportFrame" style="width:100%;height:70vh;margin-top:10px;border:1px solid #eee;border-radius:10px"></iframe>
+  </div>
 
-app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-JOBS: Dict[str, Dict] = {}  # in-memory job table for the pilot
+  <script>
+    const API_BASE = "http://localhost:8000"; // change to your VM URL later
+    const fileInput = document.getElementById('file');
+    const startBtn = document.getElementById('start');
+    const statusEl = document.getElementById('status');
+    const reportDiv = document.getElementById('report');
+    const reportFrame = document.getElementById('reportFrame');
+    const printBtn = document.getElementById('printBtn');
+    const jsonBtn = document.getElementById('jsonBtn');
 
-def ffmpeg_normalize(in_path, out_path):
-    # mono 16kHz WAV
-    cmd = ["ffmpeg", "-y", "-i", in_path, "-ac", "1", "-ar", "16000", out_path]
-    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    startBtn.onclick = async () => {
+      if (!fileInput.files.length) { alert("Pick a file"); return; }
+      const f = fileInput.files[0];
+      statusEl.textContent = "Uploading…";
+      const form = new FormData();
+      form.append("file", f);
 
-def transcribe(path):
-    # Whisper (predictable cost) — switch model if you like
-    with open(path, "rb") as f:
-        tr = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=f,
-            response_format="verbose_json"  # segments w/ timestamps
-        )
-    return tr  # dict-like
+      // 1) upload & enqueue
+      const r = await fetch(`${API_BASE}/enqueue`, { method:"POST", body: form });
+      const j = await r.json(); // {job_id}
+      const jobId = j.job_id;
+      statusEl.textContent = `Processing (job ${jobId})…`;
 
-def simple_detectors(transcript_json):
-    flags = []
-    meta_phrases = ["you know what I mean", "don’t say that", "dont say that", "they're listening", "they are listening", "you know"]
-    for seg in transcript_json.get("segments", []):
-      text = (seg.get("text") or "").lower()
-      start = float(seg.get("start", 0.0)); end = float(seg.get("end", 0.0))
-      # hesitation via long duration per few words (very naive)
-      words = max(1, len(text.split()))
-      dur = max(0.1, end - start)
-      hes_score = dur/words
-      reasons = []
-      if any(p in text for p in meta_phrases):
-          reasons.append("META_EVASION")
-      if hes_score > 0.9:  # crude first pass
-          reasons.append("HESITATION_SPIKE")
-      if reasons:
-          flags.append({
-              "span_s": {"start": start, "end": end},
-              "reasons": reasons,
-              "flag_score": round(min(0.99, 0.4 + (hes_score-0.9)*0.4 + 0.2*len(reasons)), 2)
-          })
-    return flags
+      // 2) poll status
+      let done = false;
+      while (!done) {
+        await new Promise(res => setTimeout(res, 2500));
+        const s = await fetch(`${API_BASE}/status?job_id=${jobId}`);
+        const sj = await s.json(); // {state, report_html, summary_json}
+        if (sj.state === "ready") {
+          done = true;
+          // show report (HTML) in iframe
+          const blob = new Blob([sj.report_html], {type:"text/html"});
+          const url = URL.createObjectURL(blob);
+          reportFrame.src = url;
+          // JSON Summary download
+          const jblob = new Blob([JSON.stringify(sj.summary_json,null,2)], {type:"application/json"});
+          jsonBtn.href = URL.createObjectURL(jblob);
 
-def render_report_html(case_id, summary):
-    # very simple printable HTML; you can swap in the nicer template later
-    rows = []
-    for f in summary["flags"][:6]:
-        rows.append(f"""
-        <div style="border-left:4px solid #c00;padding-left:8px;margin:10px 0;">
-          <div><b>Reasons:</b> {", ".join(f["reasons"])} | <b>flag_score</b>={f["flag_score"]}</div>
-          <div><b>Span:</b> {f['span_s']['start']:.1f}s → {f['span_s']['end']:.1f}s</div>
-        </div>
-        """)
-    body = "\n".join(rows) or "<i>No flags found (pilot detectors are conservative).</i>"
-    now = time.strftime("%Y-%m-%d %H:%M:%S")
-    return f"""
-<!doctype html><html><head><meta charset="utf-8">
-<title>Triage Report — {case_id}</title>
-<style>body{{font-family:system-ui,Segoe UI,Arial;margin:20px}} .btn{{padding:8px 12px;border-radius:8px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}}</style>
-</head><body>
-<h1>Triage Report — {case_id}</h1>
-<div>Generated: {now} · Policy: Zero-Retention · Model: whisper-1</div>
-<hr/>
-<h3>Flagged Spans</h3>
-{body}
-<hr/>
-<button class="btn" onclick="window.print()">Print / Save</button>
-</body></html>
-"""
-
-@app.post("/enqueue")
-async def enqueue(file: UploadFile = File(...), case_id: str = "CASE-PILOT"):
-    job_id = f"JOB-{int(time.time()*1000)}"
-    JOBS[job_id] = {"state": "processing"}
-    # process immediately (no queue) in a temp dir; zero-retention discipline
-    with tempfile.TemporaryDirectory() as td:
-        src = os.path.join(td, file.filename)
-        with open(src, "wb") as out:
-            out.write(await file.read())
-        norm = os.path.join(td, "norm.wav")
-        ffmpeg_normalize(src, norm)
-        tr = transcribe(norm)
-        flags = simple_detectors(tr)
-        summary = {
-            "schema_version":"1.0",
-            "case_id": case_id,
-            "run_id": job_id,
-            "time_range": {"start":"", "end":""},
-            "profile": "Obstruction",
-            "codebook_version": "v0",
-            "flags": flags,
-            "trendlines": [],
-            "policy": {"retention":"NONE"}
+          reportDiv.style.display = "block";
+          statusEl.textContent = "Done";
+        } else if (sj.state === "error") {
+          done = true; statusEl.textContent = "Error processing file.";
         }
-        html = render_report_html(case_id, summary)
-        JOBS[job_id] = {"state":"ready", "report_html": html, "summary_json": summary}
-    return {"job_id": job_id}
+      }
+    };
 
-@app.get("/status")
-def status(job_id: str = Query(...)):
-    j = JOBS.get(job_id, {"state":"missing"})
-    # return report inline (simple for pilot)
-    if j.get("state") == "ready":
-        return {"state":"ready", "report_html": j["report_html"], "summary_json": j["summary_json"]}
-    return {"state": j.get("state", "missing")}
+    printBtn.onclick = () => {
+      const w = reportFrame.contentWindow;
+      if (w) w.print();
+    };
+  </script>
+</body>
+</html>
+
