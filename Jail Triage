@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Jail Call Triage (Pilot)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;margin:20px}
+    .drop{border:2px dashed #999;border-radius:12px;padding:24px;text-align:center}
+    .btn{padding:10px 16px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    .row{display:flex;gap:10px;margin-top:10px;align-items:center}
+    .card{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}
+    #report{display:none}
+  </style>
+</head>
+<body>
+  <h1>Jail Call Triage (Pilot)</h1>
+  <div class="drop" id="drop">
+    <p>Drop a .wav (or click select)</p>
+    <input type="file" id="file" accept=".wav,.mp3,.m4a" />
+    <div class="row"><button class="btn" id="start">Process</button><span id="status"></span></div>
+  </div>
+
+  <div id="report" class="card">
+    <h3>Report ready</h3>
+    <div class="row">
+      <button class="btn" id="printBtn">Print / Save as PDF</button>
+      <a id="jsonBtn" class="btn" download="triage-summary.json">Download JSON Summary</a>
+    </div>
+    <iframe id="reportFrame" style="width:100%;height:70vh;margin-top:10px;border:1px solid #eee;border-radius:10px"></iframe>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:8000"; // change to your VM URL later
+    const fileInput = document.getElementById('file');
+    const startBtn = document.getElementById('start');
+    const statusEl = document.getElementById('status');
+    const reportDiv = document.getElementById('report');
+    const reportFrame = document.getElementById('reportFrame');
+    const printBtn = document.getElementById('printBtn');
+    const jsonBtn = document.getElementById('jsonBtn');
+
+    startBtn.onclick = async () => {
+      if (!fileInput.files.length) { alert("Pick a file"); return; }
+      const f = fileInput.files[0];
+      statusEl.textContent = "Uploading…";
+      const form = new FormData();
+      form.append("file", f);
+
+      // 1) upload & enqueue
+      const r = await fetch(`${API_BASE}/enqueue`, { method:"POST", body: form });
+      const j = await r.json(); // {job_id}
+      const jobId = j.job_id;
+      statusEl.textContent = `Processing (job ${jobId})…`;
+
+      // 2) poll status
+      let done = false;
+      while (!done) {
+        await new Promise(res => setTimeout(res, 2500));
+        const s = await fetch(`${API_BASE}/status?job_id=${jobId}`);
+        const sj = await s.json(); // {state, report_html, summary_json}
+        if (sj.state === "ready") {
+          done = true;
+          // show report (HTML) in iframe
+          const blob = new Blob([sj.report_html], {type:"text/html"});
+          const url = URL.createObjectURL(blob);
+          reportFrame.src = url;
+          // JSON Summary download
+          const jblob = new Blob([JSON.stringify(sj.summary_json,null,2)], {type:"application/json"});
+          jsonBtn.href = URL.createObjectURL(jblob);
+
+          reportDiv.style.display = "block";
+          statusEl.textContent = "Done";
+        } else if (sj.state === "error") {
+          done = true; statusEl.textContent = "Error processing file.";
+        }
+      }
+    };
+
+    printBtn.onclick = () => {
+      const w = reportFrame.contentWindow;
+      if (w) w.print();
+    };
+  </script>
+</body>
+</html>
