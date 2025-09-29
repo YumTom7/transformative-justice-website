@@ -1,1 +1,45 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CaseConnect — Test Upload</title>
+<style>
+  body{font:14px/1.4 system-ui;margin:0;padding:24px;background:#fafafa;color:#111}
+  .box{max-width:620px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px}
+  button{padding:.6rem 1rem;border:1px solid #111;border-radius:10px;background:#111;color:#fff;cursor:pointer}
+  .muted{color:#555}
+  #out a{display:block;margin:6px 0}
+</style>
+<div class="box">
+  <h1>CaseConnect (Test)</h1>
+  <p class="muted">Upload a jail-call audio file to generate a triage report (HTML) and JSON summary.</p>
+  <input id="file" type="file" accept=".wav,.mp3,.m4a" />
+  <button id="go">Upload & Process</button>
+  <pre id="log" class="muted"></pre>
+  <div id="out"></div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+$("go").onclick = async () => {
+  const f = $("file").files[0];
+  if(!f){$("log").textContent="Please choose a file.";return;}
+  if(f.size > 50 * 1024 * 1024){$("log").textContent="Please keep files under 50MB for the test.";return;}
+  $("log").textContent = "Reading file…";
+  const dataUrl = await new Promise((res,rej)=>{ const r = new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+  $("log").textContent = "Uploading to function…";
+  const r = await fetch("/.netlify/functions/ingest", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify({ filename: f.name, dataUrl })
+  });
+  const j = await r.json();
+  if(!r.ok){ $("log").textContent = "Error: " + (j.error || r.statusText); return; }
+  $("log").textContent = "Done.";
+  $("out").innerHTML =
+    `<a href="${j.report_url}" target="_blank">Open HTML Report</a>
+     <a href="${j.summary_url}" target="_blank">Open JSON Summary</a>
+     <div class="muted">Job ID: ${j.job_id}</div>`;
+};
+</script>
+</html>
 
