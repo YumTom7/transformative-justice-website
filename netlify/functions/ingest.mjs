@@ -116,7 +116,7 @@ export default async (req) => {
     await store.setJSON(`summaries/${jobId}.json`, { job_id: jobId, ...summary });
     await store.set(`reports/${jobId}.html`, html, { metadata: { "content-type": "text/html; charset=utf-8" } });
 
-    const base = "/.netlify/functions/artifact";
+    const base = "/.netlify/functions/artifacts";
     return Response.json({
       job_id: jobId,
       report_url: `${base}?key=${encodeURIComponent(`reports/${jobId}.html`)}`,
